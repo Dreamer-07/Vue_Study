@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>08_表单输入绑定</title>
+</head>
+<body>
+    <!-- 使用 v-model(双向数据绑定)自动收集数据 -->
+    <div id="demo">
+        <!-- 使用 .prevent 阻止事件的默认行为 -->
+        <form action="/xxx" @submit.prevent="sumbitForm">
+            <span>用户名：</span>
+            <input type="text" v-model="username" /> <br>
+
+            <span>密码：</span>
+            <input type="password" v-model="password" /> <br>
+
+            <!-- 对于 radio 单选框，v-model 是以 value 值进行区别的 -->
+            <span>性别：</span> 
+            <label for="male">男</label>
+            <input type="radio" id="male" value="男" v-model="sex" name="sex"/>
+            <label for="female">女</label>
+            <input type="radio" id="female" value="女" v-model="sex" name="sex"/> <br>
+
+            <!-- 对于 checkbox ，绑定的 v-model 数据值需要使用数组数据类型来接收 
+                其中保存的值是对于组件的 value 值
+            -->
+            <span>爱好：</span>
+            <label for="fgo">FGO</label>
+            <input type="checkbox" value="fgo" id="fgo" v-model="likes">
+            <label for="yys">阴阳师</label>
+            <input type="checkbox" value="yys" id="yys" v-model="likes">
+            <label for="mrfz">明日方舟</label>
+            <input type="checkbox" value="mrfz" id="mrfz" v-model="likes"> <br>
+
+            <span>城市：</span>
+            <!-- 对于 select 标签，绑定的 v-model 是以内部 option 的 value 值进行区别的 -->
+            <select v-model="cityId">
+                <option value="0">未选择</option>
+                <!-- 传输给后端的 value 应该是对于选项的 id，使用 : 前缀将其转换为表达式  -->
+                <option v-for="(city,index) in cityList" :value="city.id">{{city.name}}</option>
+            </select> <br>
+
+            <span>介绍：</span>
+            <textarea rows="10" v-model="desc"></textarea> <br>
+
+            <input type="submit" value="注册">
+        </form>
+    </div> 
+    <script src="../../js/vue.js"></script>
+    <script>
+        const vm = new Vue({
+            el: "#demo",
+            data: {
+                username: '',
+                password: '',
+                /* radio：可以设定初始值为指定的 value */
+                sex: '男',
+                /* checkbox：可以设定多个数组元素为指定的 value */
+                likes: ['fgo','yys'],
+                /* select：可以设定对应 option 的 value 值设置初始值 */
+                cityId: "0",
+                cityList: [
+                    {name:"北京",id: 1},
+                    {name:"东京",id: 2},
+                    {name:"深圳",id: 3}
+                ],
+                desc: "巴御前天下第一"
+            },
+            methods: {
+                sumbitForm() {
+                    console.log(
+                        this.username + " " + this.password
+                        + " " + this.sex + " " + this.likes 
+                        + " " + this.cityId + " " + this.desc
+                        );
+                }
+            }
+        });
+    </script>
+</body>
+</html>

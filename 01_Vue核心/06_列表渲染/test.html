@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>06_列表渲染</title>
+</head>
+<body>
+    <!-- 
+        vue 的变更方法，详情可以看 https://cn.vuejs.org/v2/guide/list.html
+        对于数组，vue包装了原生 JS,使它们在修改数组内部元素时，依然会触发视图更新
+            - 注意：在 vue 中如果需要视图更新，因为 vue 监听的是整个 数组对象
+                    所以操作数组时就不能直接通过 [索引] 操作数组
+        变更方法：
+            push()
+            pop()
+            shift()
+            unshift()
+            splice()
+            sort()
+            reverse()
+     -->
+    <div id="demo">
+        <h2>测试：v-for 遍历数组</h2>
+        <ul>
+            <!-- 
+                v-for 语法: (遍历元素,索引) in data数据(数组) 
+                还可以使用一个 :key 用来指定键
+            -->
+            <li v-for="(p,index) in persons" :key="index">
+                {{index}} --- {{p.name}} --- {{p.age}}
+                --- <button @click="deleteP(index)">删除</button>
+                --- <button @click="updateP(index,{name: 'Cat',age: 22})">修改</button>
+            </li>
+        </ul>
+        <h2>测试：v-for 遍历对象</h2>
+        <ul>
+            <!-- v-for 语法：(属性值,属性名) in data数据(对象) -->
+            <li v-for="(value,key) in persons[1]" :key="key">
+                {{key}} --- {{value}}
+            </li>
+        </ul>
+    </div>
+    <script src="../../js/vue.js"></script>
+    <script>
+        const vm = new Vue({
+            el: "#demo",
+            data: {
+                persons: [
+                    {name:"Dark",age:17}, 
+                    {name:"Tom",age:17}, 
+                    {name:"Jack",age:17}, 
+                    {name:"MiaoNei",age:18}, 
+                ]
+            },
+            methods: {
+                deleteP: function(index){
+                    // 删除指定 index 的元素
+                    this.persons.splice(index,1);
+                },
+                updateP: function(index,person){
+                    // 修改指定 index 上的元素
+                    // this.persons[index] = person; //不能直接操作 index 对数组内部的元素进行修改
+                    this.persons.splice(index,1,person); //通过变更方法去修改数组内的元素数据
+                }
+            }
+        });
+    </script>
+</body>
+</html>

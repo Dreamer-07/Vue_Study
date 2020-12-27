@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>02_模板语法</title>
+</head>
+<body>
+    <!-- 
+        1. 模板的理解
+            - 动态的 html 页面
+            - 包含了一些 JS 语法代码
+                双大括号表达式(JS 表达式：可以写 JS 语法)
+                指令(以v-开头的自定义标签属性)
+        2. 双大括号表达式
+            - 语法：{{exp}}
+            - 功能：向页面输出数据
+            - 注意：可以使用 JS 的语法调用对象的方法
+
+     -->
+    <div id="app">
+        <h2>1. 双大括号表达式</h2>
+            <p>{{msg}}</p> <!-- textContent -->
+            <!-- 使用 JS 语法 - 调用对象的方法 -->
+            <p>{{msg.toUpperCase()}}</p>
+            <!-- v-text:普通的文本 -->
+            <p v-text="msg"></p> <!-- textContent -->
+            <!-- v-html:HTML 标签 -->
+            <p v-html="msg"></p> <!-- innerHTML -->
+
+        <h2>2. 指令一：强制数据绑定</h2>
+            <!-- 原 HTML 语法 -->
+            <img src="imgUrl"/>
+            <!-- 将 HTML 语法强制转换成 JS 表达式(绑定数据) -->
+            <!-- 1. 使用 v-bind: 前缀-->
+            <img v-bind:src="imgUrl" />
+            <!-- 2. 使用 : 前缀 -->
+            <img :src="imgUrl" />
+
+            
+        <h2>3. 指令二：绑定事件监听</h2>
+        <!-- 
+            绑定事件是可以使用(传入参数)也可以不使用()；
+            传入参数时可以使用 JS 表达式调用 data 中的数据 
+        -->
+            <!-- 使用 v-on:事件 前缀 -->
+            <button v-on:click="test">test</button>
+            <!-- 使用 @事件 前缀 -->
+            <button @click="test2(msg)">test2()</button>
+
+    </div>
+</body>
+<script src="../../js/vue.js"></script>
+<script>
+    const vm = new Vue({
+        el: "#app",
+        data: { // data 的所有属性都会成为 vm 对象的属性，而模板页面中可以直接访问
+            msg: "<a href='http://www.baidu.com'>百度一下，你就知道</a>",
+            imgUrl: "https://cn.vuejs.org/images/logo.png"
+        },
+        //使用 methods 管理监听事件
+        methods: {
+            test(){
+                alert("byq");
+            },
+            test2(value){
+                alert(value)
+            }
+        }
+    });
+</script>
+</html>

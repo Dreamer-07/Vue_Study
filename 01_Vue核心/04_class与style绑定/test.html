@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>04_class与style绑定</title>
+    <style>
+        .aClass{
+            color: red;
+        }
+        .bClass{
+            color: blue;
+        }
+        .cClass{
+            font-size: 30px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 
+        1. 理解：
+            - 在应用界面中，有些元素的样式是变化的；
+            - 而 **class/style** 绑定就是专门用来实现动态样式效果的技术 
+        2. class 绑定
+            - 语法: `:class = 'xxx'`
+            - xxx 是 字符串/数组/对象
+        3. style 绑定
+            - 语法: `:style="{ color: activeColor,fontSize: fontsize + 'px' }"`
+                    其中的 activeColor 和 fontSize 都是 data 属性
+     -->
+    <div id="demo">
+        <h2>1. class绑定：class = 'xxx'</h2>
+            <!-- 仍可以使用 class 定义静态的 class 属性 -->
+            <p class="cClass" :class="a">xxx的值字符串</p>
+            <!-- 以 `key(类名):true/false/data数据,[...]` 的格式定义，建议都写成data数据，而不是写死 -->
+            <p :class="{aClass: isA,bClass: isB,cClass: false}">xxx的值是对象</p>
+            <!-- (不常用) 可以指定多个 class 类名，可以使用 data 的属性名 -->
+            <p :class="[a,'cClass']">xxx的值数组</p>
+            <button @click="update">修改颜色</button>
+        <h2>2. style绑定 </h2>
+            <p :style="{color: activeColor,fontSize: fontSize + 'px'}">绑定 style</p>
+    </div>
+    <script src="../../js/vue.js"></script>
+    <script>
+        const vm = new Vue({
+            el: "#demo",
+            data: {
+                a: "aClass",
+                isA: true,
+                isB: false,
+                activeColor: "red",
+                fontSize: 20 
+            },
+            methods: {
+                //动态的修改 data 数据对应的属性值
+                update(){
+                    this.a = "bClass";
+                    this.isA = false;
+                    this.isB = true;
+                    this.activeColor = "blue";
+                    this.fontSize = 30;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

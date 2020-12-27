@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>07_事件监听</title>
+</head>
+<body>
+    <div id="demo">
+        <h2>事件监听</h2>
+            <!-- 如果不传入参数，默认会传入一个 event(可以通过 target 属性访问当前触发回调函数的 DOM 元素) -->
+            <button @click="test1">test1</button>
+            <!-- 如果传入一个参数,那么就不会传入默认的 event 对象 -->
+            <button @click="test2('巴御前')">test2</button>
+            <!-- 如果需要传入参数，又需要操作当前的 DOM 元素，可以显式的传入一个参数 $event,该参数就是 event -->
+            <button @click="test3('巴御前',$event)">test3</button>
+        <h2>事件修饰符</h2>
+            <!-- 阻止事件的冒泡 -->
+            <div style="width: 200px;height: 200px;background-color: red;" @click="test4">
+                <!-- 添加事件修饰符 .stop 即可 -->
+                <div style="width: 100px;height: 100px;background-color:pink;" @click.stop="test5"></div>
+            </div>
+
+            <!-- 阻止事件的默认行为 - 添加事件修饰符 .prevent -->
+            <a href="http://www.baidu.com" @click.prevent="test6">去百度</a>
+        <h2>按键修饰符</h2>
+            <!-- 可以在键盘事件的后面加上 .键对应的keyCode / 键名(只有部分键才有用) ,这样当只有按下对应的键时才会调用对应的回调函数 -->
+            <input type="text" @keyup.13="test7" />
+            <input type="text" @keyup.space="test8" />
+    </div>
+    <script src="../../js/vue.js"></script>
+    <script>
+        const vm = new Vue({
+            el: "#demo",
+            methods: {
+                test1(event) {
+                    alert(event.target.innerHTML);
+                },
+                test2(value) {
+                    alert(value + "は一番可愛いよ")
+                },
+                test3(value,event) {
+                    alert(event.target.innerHTML + ": " + value + "は私の彼女ですわ");
+                },
+                test4() {
+                    alert("out");
+                },
+                test5() {
+                    alert("inner");
+                },
+                test6() {
+                    alert("巴御前添加第一!!");
+                },
+                test7(event) {
+                    alert(event.target.value);
+                },
+                test8(event) {
+                    alert(event.target.value);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

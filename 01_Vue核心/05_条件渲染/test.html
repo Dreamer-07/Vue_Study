@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>05_条件渲染</title>
+</head>
+<body>
+    <div id="demo">
+        <!-- v-if 指定一个 data 数据参数，如果数据为 true 就显示，反之不显示 -->
+        <p v-if="ok">成功啦</p>
+        <!-- v-esle 可以不指定参数。默认和上面的元素进行匹配 -->
+        <p v-else>失败了</p>
+
+        <!-- v-show 则需要自己指定要使用的 data 数据参数 -->
+        <p v-show="ok">成功了！！</p>
+        <p v-show="!ok">失败了！！</p>
+        <button @click="ok=!ok">切换</button>
+    </div>
+    <script src="../../js/vue.js"></script>
+    <script>
+        const vm = new Vue({
+            el: "#demo",
+            data: {
+                ok: false
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>06(2)_列表的搜索和排序</title>
+</head>
+<body>
+    <!-- 
+        列表过滤
+        列表排序
+    -->
+    <div id="demo">
+        <input type="text" placeholder="根据name进行搜索" v-model="searchName" />
+        <ul>
+            <li v-for="(p,index) in filterPerson" :key="index">
+                {{index}} --- {{p.name}} --- {{p.age}}
+            </li>
+        </ul>
+        <button @click="orderType=1">年龄升序</button> 
+        <button @click="orderType=2">年龄降序</button> 
+        <button @click="orderType=0">原本顺序</button> 
+    </div>
+    <script src="../../js/vue.js"></script>
+    <script>
+        const vm = new Vue({
+            el: "#demo",
+            data: {
+                searchName: "",
+                orderType: 0, //使用数字区别排序的类型; 0 代表原来顺序，1代表年龄升序，2代表年龄降序
+                persons: [
+                    {name:"Dark",age:17}, 
+                    {name:"Tom",age:17}, 
+                    {name:"Jack",age:17}, 
+                    {name:"MiaoNei",age:18}, 
+                ]
+            },
+            computed: {
+                filterPerson() {
+                    //使用解构赋值获取需要的 data 数据
+                    const { searchName , persons , orderType } = this;
+                    // 遍历原数组中的数据，得到一个新的数组
+                    let filterPerson;
+                    filterPerson = persons.filter(p => p.name.indexOf(searchName)!==-1);
+                    //根据排序的类型不同，进入不同的排序
+                    //如果为0就不进行排序
+                    if( orderType !== 0 ){
+                        filterPerson.sort((p1,p2) => {
+                            //如果为1就是升序排序
+                            if(orderType === 1){
+                                return p1.age - p2.age;
+                            //如果为2就是降序排序
+                            }else{
+                                return p2.age - p1.age;
+                            }
+                        })
+                    }
+                    return filterPerson;
+                }
+            }
+        })
+    </script>
+</body>
+</html>
