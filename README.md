@@ -1640,5 +1640,176 @@
   </script>
   ```
 
+
+# 第二章 Vue 组件化开发
+
+## 2.1 使用 vue-cli 搭建项目
+
+参考 3.2 中的方法
+
+## 2.2 项目主要结构说明
+
+```
+|- public：在目录中会包含在 webpack 编译过程中没有加工处理的文件(index.html 除外)
+	|-favicon.icon 项目的图标
+	|-index.html 应用的模板文件，Vue 应用会通过这个 HTML 页面来运行
+				 (这个不是负责管理页面最终展示的模板，而是管理 Vue 应用之外的静态 HTML 文件)
+|- src: Vue 应用的核心代码目录
+	|- mian.ts: 应用的主入口
+	|- App.vue: Vue 应用的根节点组件
+	|- components: 存放自定义组件的目录
+	|- assets: 用来存放像 CSS 、图片这种静态资源
+|- .browserslistrc: 这个是 Browserslist 的配置文件，可以通过它来控制需要对哪些浏览器进行支持和优化。
+|- .eslintrc.js: 这个是 eslint 的配置文件，可以通过它来管理你的校验规则。
+|- babel.config.js: babel 配置文件
+|- package.json: 整个项目的描述文件
+```
+
+- main.ts
+
+  ```typescript
+  // 程序的主入口 ts 文件
+  // 引入 createApp 函数，用于创建对应的应用，产生应用的实例对象
+  import { createApp } from 'vue'
+  // 引入 App 组件(引入组件的父级组价)
+  import App from './App.vue'
+  // 创建 App 应用返回对应的实例对象，调用 mount 方法进行挂载到指定的选择器元素上
+  createApp(App).mount('#app')
+  ```
+
+- App.vue
+
+  ```vue
+  <template>
+      <!-- 
+      Vue2 中的 html 模板中必须要有一对根标签，
+      Vue3 中的 html 模板可以没有跟标签 
+      -->
+      <img alt="Vue logo" src="./assets/logo.png">
+      <!-- 使用一个子级组件 -->
+      <HelloWorld msg="Welcome to Your Vue.js + TypeScript App"/>
+  </template>
+  
+  <script lang="ts">
+      /* 可以在内部定义 TS 代码 */
+      // defineComponent函数，该函数主要是定义一个组件，内部可以传入一个配置对象 
+      import { defineComponent } from 'vue';
+      // 引入一个子级组件
+      import HelloWorld from './components/HelloWorld.vue';
+  
+      // 暴露出一个定义好的组件
+      export default defineComponent({
+          // 当前组件的名字
+          name: 'App',
+          // 注册组件
+          components: {
+              // 注册一个子级组件
+              HelloWorld
+          }
+      });
+  </script>
+  
+  <style>
+      #app {
+          font-family: Avenir, Helvetica, Arial, sans-serif;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-align: center;
+          color: #2c3e50;
+          margin-top: 60px;
+      }
+  </style>
+  ```
+
+# 第三章 Vue 3
+
+## 3.1 基本介绍
+
+**相关信息**
+
+- Vue3 支持大多数 Vue2x 的特性
+- 更好的支持 **TypeScirpt**
+
+**性能提升**
+
+- 打包大小减少 &  初次渲染加快 & 更新渲染加快 & 内存减少
+
+- 使用 **Proxy** 代替 **defineProperty** 实现数据响应式
+- 重写 **虚拟DOM** 的实现和 **Tree-Shaking**
+
+**新增特性**
+
+- **Composition(组合) API**
+- setup
+  - ref 和 reactive
+  - computed 和 watch
+  - 新的生命周期函数
+  - provide 和 inject
+  - ...
+- 新组件
+  - Fragment - 文档碎片
+  - Teleport - 瞬移组件的位置
+  - Suspense - 异步加载组件的 loading 界面
+- 其他 API 更新
+  - 全局 API 的修改
+  - 将原来的全局 API 转移到应用对象
+  - 模板语法的变化
+
+## 3.2 创建 Vue3 项目
+
+### 1) 使用 vue-cli 创建
+
+1. 下载 vue-cli : **npm install -g @vue/cli**
+
+   下载后可以使用 **vue -V** 查看版本，确保版本在 4.5.0 以上
+
+2. 创建项目 **vue-create 项目名**
+
+3. 选择自定义配置
+
+   ![image-20201228161200459](README.assets/image-20201228161200459.png)
+
+4. 注意：使用 **空格** 表示需要的选择的配置
+
+   ![image-20201228161311350](README.assets/image-20201228161311350.png)
+
+5. 选中 3.0
+
+   ![image-20201228161344677](README.assets/image-20201228161344677.png)
+
+6. 接下载的直接 enter 即可
+
+7. 安装之后，进入项目的根目录，使用 **npm run serve** 启动项目
+
+   ![image-20201228162135813](README.assets/image-20201228162135813.png)
+
+8. 游览器网址进行访问
+
+   ![image-20201228162224682](README.assets/image-20201228162224682.png)
+
+### 2) 使用 vite 创建
+
+**说明**
+
+- vite 是一个由原生 ESM 驱动的 Web 开发构建工具。在开发环境下基于原生 ES imports 开发
+- 它主要做到了 **本地快速开发启动**，在开发生产下基于 Rollup 包
+  - 快速的冷启动，不需要等待打包时间
+  - 即时的热模块更新，替换性能和模块数量的解耦让更新飞起；
+  - 真正的按需编译，不再等待整个应用编译完成，这是一个巨大的改变。
+
+**构建项目**
+
+- 使用 **npm init vite-app \<project-name>**  命令
+
+- 进入到项目的根目录 **cd \<project-name>**
+
+- 安装依赖 **npm install**
+
+- 启动项目 **npm run dev**
+
+- 游览器网址访问项目
+
+  ![image-20201228162710409](README.assets/image-20201228162710409.png)
+
   
 
