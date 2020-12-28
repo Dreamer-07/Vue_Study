@@ -1199,3 +1199,446 @@
 - 效果
 
   ![image-20201227113828329](README.assets/image-20201227113828329.png)
+
+## 1.11 过渡&动画
+
+### 说明
+
+- 实质上时操作 css 的 transition / animation
+- vue 会给目标元素**添加 / 移除 特定的 class**
+- 基本过渡动画的编码
+  - 在目标元素外包裹 `<transition name='xxx'></transition>` 标签，name 属性为自定的
+  - 定义 class 样式
+    1. 指定过渡样式：transition / animation
+    2. 指定隐藏样式：opacity/其它
+- 过渡相关的类名(xxx 为包裹在外层的 transition 的 name 属性)
+  - xxx-enter-active：指定显示的 transition
+  - xxx-leave-avtive：指定隐藏的 transition
+  - xxx-enter / xxx-leave-to：指定隐藏时的样式
+  - ![image-20201228100042830](README.assets/image-20201228100042830.png)
+
+### 实例
+
+- 过渡效果使用 transition
+
+  ```vue
+  <!DOCTYPE html>
+  <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>10_过渡&动画1</title>
+          <style>
+              /* 根据规范定义不同状态下的 class 类型 */
+              .byq-enter-active,.byq-leave-active{
+                  transition: opacity 0.5s;
+              }
+              .byq-enter,.byq-leave-to{
+                  opacity: 0;
+              }
+  
+              .move-enter-active{
+                  transition: all 0.5s;
+              }
+              .move-leave-active{
+                  transition: all 1s;
+              }
+              .move-enter,.move-leave-to{
+                  opacity: 0;
+                  transform: translateX(20px);
+              }
+          </style>
+      </head>
+      <body>
+          <!-- 
+          	1. 使用 transition 标签包裹目标元素
+          	2. 指定 transition 标签的 name 属性值，该属性值为作为添加(移除)的 class 类型前缀
+          	3. vue 会动态的为目标元素 添加/移除 class 类名
+          	4. 定义 class 样式
+          		- 过渡样式: transition / animation
+          		- 隐藏样式：opacity/其他
+          -->
+          <div id="demo">
+              <button @click="isShow=!isShow">切换</button>
+              <transition name="byq">
+                  <p v-show="isShow">巴御前天下第一!</p>
+              </transition>
+          </div>
+  
+          <div id="demo2">
+              <button @click="isShow=!isShow">切换</button>
+              <transition name="move">
+                  <p v-show="isShow">巴御前天下第一!</p>
+              </transition>
+          </div>
+  
+          <script src="../../js/vue.js"></script>
+          <script>
+              const vm = new Vue({
+                  el: "#demo",
+                  /* 使用 data 函数返回初始化值 */
+                  data() {
+                      return {
+                          isShow: true
+                      }
+                  }
+              });
+  
+              const vm2 = new Vue({
+                  el: "#demo2",
+                  data: {
+                      isShow: true
+                  }
+              })
+          </script>
+      </body>
+  </html>
+  ```
+
+- 过渡效果为 animation
+
+  ```vue
+  <!DOCTYPE html>
+  <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>10_过渡&动画2</title>
+          <style>
+              /* 指定过渡效果为自定义的动画 */
+              .bounce-enter-active {
+                  animation: bounce-in .5s;
+              }
+              .bounce-leave-active {
+                  animation: bounce-in .5s reverse;
+              }
+              /* 使用 @keyframes 自定义动画 */
+              @keyframes bounce-in {
+                  0% {
+                      transform: scale(0);
+                  }
+                  50% {
+                      transform: scale(1.5);
+                  }
+                  100% {
+                      transform: scale(1);
+                  }
+              }
+          </style>
+      </head>
+      <body>
+          <div id="example-2">
+              <button @click="show = !show">Toggle show</button>
+              <br />
+              <transition name="bounce">
+                  <p v-if="show" style="display: inline-block;">Lorem ipsum</p>
+              </transition>
+          </div>
+          <script src="../../js/vue.js"></script>
+          <script>
+              new Vue({
+                  el: '#example-2',
+                  data: {
+                      show: true
+                  }
+              })
+          </script>
+      </body>
+  </html>
+  ```
+
+  
+
+## 1.12 过滤器
+
+- 功能：对要显示的数据进行 **特定格式化** 后再显示
+
+- 注意：并不会改变原来的数据，而是产生新的对应数据
+
+- 语法
+
+  1. 定义过滤器
+
+     ```vue
+     <scirpt>
+     	Vue.filter(fiterName,function(参数){进行数据处理})
+     </scirpt>
+     ```
+
+  2. 使用过滤器：`{{ 数据 | 要使用的过滤器(参数) }}`
+
+- 实例
+
+  - 注意：对于**日期格式化**我们一般会使用另一个扩展的 JS：moment.js
+
+    ```
+    可以使用 bootcdn 获取对应的 url：https://www.bootcdn.cn/moment.js/
+    ```
+
+  - ```vue
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>11_过滤器</title>
+    </head>
+    <body>
+        <div id="demo">
+            <h2>日期格式化显示</h2>
+            <p>原数据: {{ date }}</p>
+            <!-- 调用过滤器：{{ 数据 | 过滤器名 }} -->
+            <p>格式化完整版：{{ date | formatString }}</p>
+            <!-- 调用过滤器也可以使用()传入参数 -->
+            <p>年月日：{{ date | formatString('YYYY-MM-DD') }}</p>
+            <p>时分秒：{{ date | formatString('HH:mm:ss') }}</p>
+        </div>
+        <script src="../../js/vue.js"></script>
+        <!-- 导入日期格式处理的 moment.js -->
+        <script src="https://cdn.bootcdn.net/ajax/libs/moment.js/2.29.1/moment.js"></script>
+        <script>
+            // 使用 Vue 函数对象的 filter() 自定义过滤器 
+            // 回调函数可以接收多个参数，第一个为调用过滤器的数据，第二个为调用时传入的参数
+            Vue.filter('formatString',function(value,format){
+                // 返回格式化后的数据
+                return moment(value).format( format || 'YYYY-MM-DD HH:mm:ss');
+            });
+    
+            const vm = new Vue({
+                el: "#demo",
+                data: {
+                    date: new Date()
+                }
+            });
+        </script>
+    </body>
+    </html>
+    ```
+
+## 1.13 指令
+
+### 常用的内置指令
+
+| 指令名  | 效果                                                  |
+| ------- | ----------------------------------------------------- |
+| v:text  | 更新元素的 texcContent                                |
+| v-html  | 更新元素的 innerHTML                                  |
+| v-if    | 如果为 true，当前标签才会输出到页面                   |
+| v-else  | 如果为 false，当前标签才会输出到页面                  |
+| v-show  | 通过控制 **display** 样式来控制显示/隐藏              |
+| v-for   | 遍历数组和对象                                        |
+| v-on    | 绑定事件监听，**一般可以简写成@**                     |
+| v-bind: | 强制绑定解析表达式，**可以省略 v-bind**               |
+| v-model | **双向数据绑定**                                      |
+| ref     | 指定唯一标识，vue 对象通过 $refs 属性访问这个元素对象 |
+| v-clock | 防止闪现，于 css 配合：[v-clock] {display:none}       |
+
+#### ref
+
+- 为内部的元素(组件)指定一个标识，对应的 vue 对象可以通过 `$refs` 属性进行访问
+
+- ```vue
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>12_指令(内置指令)</title>
+  </head>
+  <body>
+      <!-- 补充额外的两个内置指令
+              1. ref：指定唯一标识，vue 对象通过 $refs 属性访问这个元素对象
+              2. v-clock：防止闪现，于 css 配合：[v-clock] {display:none}
+      -->
+      <div id="demo">
+          <!-- 1. ref 指定唯一标识 -->
+          <p ref="head">巴御前天下第一</p>
+          <button @click="hint">提示</button>
+      </div>
+      <script src="../../js/vue.js"></script>
+      <script>
+          const vm = new Vue({
+              el: "#demo",
+              methods: {
+                  hint(){
+                      // 可以通过 vue 对象的 refs.ref标识 访问内部的元素(组件)
+                      alert(this.$refs.head.textContent);
+                  }
+              }
+          })
+      </script>
+  </body>
+  </html>
+  ```
+
+#### v-cloak
+
+- 对于 vue 的模板渲染，有时候数据不能即使被模板解析，会导致以下的情况出现
+
+  ![image-20201228135039194](README.assets/image-20201228135039194.png)
+
+  这样带给用户的体验不好
+
+- 可以通过 开发者调试 查看标签的数据，可以发现 vue 对应的指令都不会存在，可以利用此特性，使用 `v-cloak` 做标识
+
+  配合 css 可以防止此现象出现
+
+- ```vue
+  <!DOCTYPE html>
+  <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>12_指令(内置指令)</title>
+          <style>
+              [v-cloak] {
+                  display: none
+              }
+          </style>
+      </head>
+      <body>
+          <div id="demo">
+              <!-- 2. v-cloak:也是一个标识，防止闪现 -->
+              <p v-cloak>{{ msg }}</p>
+          </div>
+          <script src="../../js/vue.js"></script>
+          <script>
+              alert(1);
+              const vm = new Vue({
+                  el: "#demo",
+                  data: {
+                      msg: "巴御前"  
+                  }
+              })
+          </script>
+      </body>
+  </html>
+  ```
+
+- ![image-20201228140131300](README.assets/image-20201228140131300.png)
+
+### 自定义指令
+
+```vue
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>12_指令(自定义指令)</title>
+</head>
+<body>
+    <!-- 
+        1. 注销全局指令
+            语法：Vue.directive('指令名',function(el,binding){数据处理})
+            - 注意：指令名不加 v-,v- 是默认的
+            - el 指令属性所在的标签对象
+            - binding 包含指令相关信息数据的对象
+        2. 注册局部指令:只在配置的 vm 对象中才能使用
+            语法：directives : {
+                '指令名'(el,binding){数据处理}
+            }
+        3，使用指令
+            v-指令名='值'
+    -->
+    <div id="demo">
+        <p v-upper-text="msg"></p>
+        <p v-lower-text="msg"></p>
+    </div>
+    
+    <div id="demo2">
+        <p v-upper-text="msg"></p>
+        <p v-lower-text="msg"></p>
+    </div>
+    <script src="../../js/vue.js"></script>
+    <script>
+        /* 自定义全局全局指令 */
+        Vue.directive('upper-text',function(el,binding){
+            console.log(el,binding);
+            // 通过 binding 对象的 value 属性可以访问使用指令时赋值的数据
+            el.textContent = binding.value.toUpperCase(); 
+        })
+        const vm = new Vue({
+            el: "#demo",
+            data: {
+                msg: "This is Game"
+            },
+            // 局部定义自定义指令 - 只能在当前 vm 实例中才可以使用
+            directives: {
+                'lower-text'(el,binding){
+                    el.textContent = binding.value.toLowerCase();
+                }
+            }
+        });
+
+        const vm2 = new Vue({
+            el: "#demo2",
+            data: {
+                msg: "Go up the river"
+            }
+        })
+    </script>
+</body>
+</html>
+```
+
+## 1.13 插件
+
+### 开发插件
+
+- 编写一个单独的 JS 文件，命名规范：vue-实现功能.js
+
+- ```javascript
+  (function(){
+      const MyPlugin = {};
+      MyPlugin.install = function (Vue, options) {
+          // 1. 添加全局方法或 property
+          Vue.myGlobalMethod = function () {
+              console.log("全局方法执行啦！！");
+          }
+          
+          // 2. 添加全局资源
+          Vue.directive('my-directive', (el,binding) => {
+              el.textContent = binding.value.toUpperCase();
+          })
+          
+          
+          // 3. 添加实例方法
+          Vue.prototype.$myMethod = function (methodOptions) {
+              console.log('实例对象方法执行啦！！');
+          }
+      }
+  
+      // 将对象暴露给 window 全局对象
+      window.MyPlugin = MyPlugin;
+  })()
+  ```
+
+### 使用插件
+
+- 在导入插件前，先导入 vue.js
+
+- ```javascript
+  <script src="../../js/vue.js"></script>
+  <script src="./vue-myPlugin.js"></script>
+  <script>
+      // 使用插件
+      Vue.use(MyPlugin); //内部会调用 MyPlugin.install(vue)
+  
+      // 调用 Vue 函数对象的全局方法
+      Vue.myGlobalMethod();
+  
+      const vm = new Vue({
+          el: "#demo",
+          data: {
+              msg: "ko do mo go zen"
+          }
+      });
+  
+      // 调用 vm 实例对象的方法
+      vm.$myMethod();
+  </script>
+  ```
+
+  
+

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>11_过滤器</title>
+</head>
+<body>
+    <div id="demo">
+        <h2>日期格式化显示</h2>
+        <p>原数据: {{ date }}</p>
+        <!-- 调用过滤器：{{ 数据 | 过滤器名 }} -->
+        <p>格式化完整版：{{ date | formatString }}</p>
+        <!-- 调用过滤器也可以使用()传入参数 -->
+        <p>年月日：{{ date | formatString('YYYY-MM-DD') }}</p>
+        <p>时分秒：{{ date | formatString('HH:mm:ss') }}</p>
+    </div>
+    <script src="../../js/vue.js"></script>
+    <!-- 导入日期格式处理的 moment.js -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/moment.js/2.29.1/moment.js"></script>
+    <script>
+        // 使用 Vue 函数对象的 filter() 自定义过滤器 
+        // 回调函数可以接收多个参数，第一个为调用过滤器的数据，第二个为调用时传入的参数
+        Vue.filter('formatString',function(value,format = 'YYYY-MM-DD HH:mm:ss'){ //使用 ES6 的语法设置参数的默认值
+            // 返回格式化后的数据
+            return moment(value).format(format);
+        });
+
+        const vm = new Vue({
+            el: "#demo",
+            data: {
+                date: new Date()
+            }
+        });
+
+
+    </script>
+</body>
+</html>

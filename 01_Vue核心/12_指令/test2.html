@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>12_指令(自定义指令)</title>
+</head>
+<body>
+    <!-- 
+        1. 注销全局指令
+            语法：Vue.directive('指令名',function(el,binding){数据处理})
+            - 注意：指令名不加 v-,v- 是默认的
+            - el 指令属性所在的标签对象
+            - binding 包含指令相关信息数据的对象
+        2. 注册局部指令:只在配置的 vm 对象中才能使用
+            语法：directives : {
+                '指令名'(el,binding){数据处理}
+            }
+        3，使用指令
+            v-指令名='值'
+    -->
+    <div id="demo">
+        <p v-upper-text="msg"></p>
+        <p v-lower-text="msg"></p>
+    </div>
+    
+    <div id="demo2">
+        <p v-upper-text="msg"></p>
+        <p v-lower-text="msg"></p>
+    </div>
+    <script src="../../js/vue.js"></script>
+    <script>
+        /* 自定义全局全局指令 */
+        Vue.directive('upper-text',function(el,binding){
+            console.log(el,binding);
+            // 通过 binding 对象的 value 属性可以访问使用指令时赋值的数据
+            el.textContent = binding.value.toUpperCase(); 
+        })
+        const vm = new Vue({
+            el: "#demo",
+            data: {
+                msg: "This is Game"
+            },
+            // 局部定义自定义指令 - 只能在当前 vm 实例中才可以使用
+            directives: {
+                'lower-text'(el,binding){
+                    el.textContent = binding.value.toLowerCase();
+                }
+            }
+        });
+
+        const vm2 = new Vue({
+            el: "#demo2",
+            data: {
+                msg: "Go up the river"
+            }
+        })
+    </script>
+</body>
+</html>

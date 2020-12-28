@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>13_插件</title>
+</head>
+<body>
+    <div id="demo">
+        <p v-my-directive="msg"></p>
+    </div>
+    <script src="../../js/vue.js"></script>
+    <script src="./vue-myPlugin.js"></script>
+    <script>
+        // 使用插件
+        Vue.use(MyPlugin); //内部会调用 MyPlugin.install(vue)
+
+        // 调用 Vue 函数对象的全局方法
+        Vue.myGlobalMethod();
+
+        const vm = new Vue({
+            el: "#demo",
+            data: {
+                msg: "ko do mo go zen"
+            }
+        });
+
+        // 调用 vm 实例对象的方法
+        vm.$myMethod();
+    </script>
+</body>
+</html>

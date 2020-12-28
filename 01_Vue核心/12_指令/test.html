@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>12_指令(内置指令)</title>
+    <style>
+        [v-cloak] {
+            display: none
+        }
+    </style>
+</head>
+<body>
+    <!-- 补充额外的两个内置指令
+            1. ref：指定唯一标识，vue 对象通过 $refs 属性访问这个元素对象
+            2. v-cloak：防止闪现，于 css 配合：[v-clock] {display:none}
+    -->
+    <div id="demo">
+        <!-- 1. ref 指定唯一标识 -->
+        <p ref="head">巴御前天下第一</p>
+        <button @click="hint">提示</button>
+        <!-- 2. v-cloak:也是一个标识，防止闪现 -->
+        <p v-cloak>{{ msg }}</p>
+    </div>
+    <script src="../../js/vue.js"></script>
+    <script>
+        alert(1);
+        const vm = new Vue({
+            el: "#demo",
+            data: {
+                msg: "巴御前"  
+            },
+            methods: {
+                hint(){
+                    // 可以通过 vue 对象的 refs.ref标识 访问内部的元素(组件)
+                    alert(this.$refs.head.textContent);
+                }
+            }
+        })
+    </script>
+</body>
+</html>

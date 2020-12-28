@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10_过渡&动画1</title>
+    <style>
+        /* 根据规范定义不同状态下的 class 类型 */
+        .byq-enter-active,.byq-leave-active{
+            transition: opacity 0.5s;
+        }
+        .byq-enter,.byq-leave-to{
+            opacity: 0;
+        }
+
+        .move-enter-active{
+            transition: all 0.5s;
+        }
+        .move-leave-active{
+            transition: all 1s;
+        }
+        .move-enter,.move-leave-to{
+            opacity: 0;
+            transform: translateX(20px);
+        }
+    </style>
+</head>
+<body>
+    <!-- 
+        1. 使用 transition 标签包裹目标元素
+        2. 指定 transition 标签的 name 属性值，该属性值为作为添加(移除)的 class 类型前缀
+        3. vue 会动态的为目标元素 添加/移除 class 类名
+        4. 定义 class 样式
+            - 过渡样式: transition / animation
+            - 隐藏样式：opacity/其他
+    -->
+    <div id="demo">
+        <button @click="isShow=!isShow">切换</button>
+        <transition name="byq">
+            <p v-show="isShow">巴御前天下第一!</p>
+        </transition>
+    </div>
+
+    <div id="demo2">
+        <button @click="isShow=!isShow">切换</button>
+        <transition name="move">
+            <p v-show="isShow">巴御前天下第一!</p>
+        </transition>
+    </div>
+
+    <script src="../../js/vue.js"></script>
+    <script>
+        const vm = new Vue({
+            el: "#demo",
+            /* 使用 data 函数返回初始化值 */
+            data() {
+                return {
+                    isShow: true
+                }
+            }
+        });
+
+        const vm2 = new Vue({
+            el: "#demo2",
+            data: {
+                isShow: true
+            }
+        })
+    </script>
+</body>
+</html>
