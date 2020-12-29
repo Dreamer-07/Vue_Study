@@ -1656,20 +1656,21 @@
 				 (这个不是负责管理页面最终展示的模板，而是管理 Vue 应用之外的静态 HTML 文件)
 |- src: Vue 应用的核心代码目录
 	|- mian.ts: 应用的主入口
-	|- App.vue: Vue 应用的根节点组件
+	|- App.vue: Vue 应用的根节点组件 
 	|- components: 存放自定义组件的目录
 	|- assets: 用来存放像 CSS 、图片这种静态资源
 |- .browserslistrc: 这个是 Browserslist 的配置文件，可以通过它来控制需要对哪些浏览器进行支持和优化。
 |- .eslintrc.js: 这个是 eslint 的配置文件，可以通过它来管理你的校验规则。
 |- babel.config.js: babel 配置文件
 |- package.json: 整个项目的描述文件
+|- tsconfig.json: typescript 配置文件
 ```
 
 - main.ts
 
   ```typescript
   // 程序的主入口 ts 文件
-  // 引入 createApp 函数，用于创建对应的应用，产生应用的实例对象
+  // 引入 createApp 函数，用于将一个组件挂载到一个节点上
   import { createApp } from 'vue'
   // 引入 App 组件(引入组件的父级组价)
   import App from './App.vue'
@@ -1680,6 +1681,7 @@
 - App.vue
 
   ```vue
+  <!-- 这里主要编写 Html 模板 -->
   <template>
       <!-- 
       Vue2 中的 html 模板中必须要有一对根标签，
@@ -1690,6 +1692,7 @@
       <HelloWorld msg="Welcome to Your Vue.js + TypeScript App"/>
   </template>
   
+  <!-- 处理 ts/js 逻辑 -->
   <script lang="ts">
       /* 可以在内部定义 TS 代码 */
       // defineComponent函数，该函数主要是定义一个组件，内部可以传入一个配置对象 
@@ -1709,6 +1712,7 @@
       });
   </script>
   
+  <!-- 样式 -->
   <style>
       #app {
           font-family: Avenir, Helvetica, Arial, sans-serif;
@@ -1720,8 +1724,540 @@
       }
   </style>
   ```
+  
+- package.json
 
-# 第三章 Vue 3
+  ```json
+  {
+      "name": "vue3_study",
+      "version": "0.1.0",
+      "private": true,
+      "scripts": {
+          // 开启本地服务器进行页面显示
+          "serve": "vue-cli-service serve",
+          // 打包项目
+          "build": "vue-cli-service build",
+          // 语法检查
+          "lint": "vue-cli-service lint"
+      },
+      // 定义生产环境需要使用的依赖
+      "dependencies": {
+          "core-js": "^3.6.5",
+          "vue": "^3.0.0"
+      },
+      // 定义开发环境需要使用的依赖
+      "devDependencies": {
+          "@typescript-eslint/eslint-plugin": "^2.33.0",
+          "@typescript-eslint/parser": "^2.33.0",
+          "@vue/cli-plugin-babel": "~4.5.0",
+          "@vue/cli-plugin-eslint": "~4.5.0",
+          "@vue/cli-plugin-typescript": "~4.5.0",
+          "@vue/cli-service": "~4.5.0",
+          "@vue/compiler-sfc": "^3.0.0",
+          "@vue/eslint-config-typescript": "^5.0.2",
+          "eslint": "^6.7.2",
+          "eslint-plugin-vue": "^7.0.0-0",
+          "typescript": "~3.9.3"
+      }
+  }
+  ```
+
+## 2.3 HelloWorld
+
+> 组件：局部功能界面，包含了要实现这个界面的**所有资源**
+
+1. 编写子级组件
+
+   ```vue
+   <template>
+   	<p>{{ msg }}</p>
+   </template>
+   
+   <script lang="ts">
+       // 暴露一个配置对象(和 Vue 一致)
+       export default {
+           // 这里的 data 必须写成函数
+           data(){
+               // 函数中返回一个对象，该对应就是 data 数据
+               return {
+                   msg: "巴御前天下第一！"
+               }
+           }
+       }
+   </script>
+   
+   <style>
+       p {
+           font-size: 20px;
+           color: red;
+       }
+   </style>
+   ```
+
+   **注意：**script 中必须暴露一个默认的配置对象(和 Vue 一致)，且其中的 data 数据必须写成函数，返回一个包含数据的对象
+
+2. 编写父级组件 - App.vue
+
+   ```vue
+   <template>
+       <img src="./assets/logo.png" alt="log" />
+       <!-- 3. 使用子组件 -->
+       <HelloWorld/>
+   </template>
+   
+   <script lang="ts">
+       /* 1. 导入需要的子级组件 */
+       import HelloWorld from "./components/HelloWorld.vue"
+       /* 2. 在父组件中注册子组件 */
+       export default {
+           name: 'App',
+           components: {
+               // 注册子组件
+               HelloWorld
+           }
+       }
+   </script>
+   
+   <style>
+       img {
+           width: 200px;
+           height: 200px
+       }
+   </style>
+   ```
+
+   **注意：** 看注释
+
+3. 编写 `main.ts` 程序的主入口文件
+
+   ```typescript
+   // 程序的主入口 ts 文件
+   // 引入 createApp 函数，用于创建对应的应用，产生应用的实例对象
+   import { createApp } from 'vue'
+   // 引入 App 组件(引入组件的父级组价)
+   import App from './App.vue'
+   // 创建 App 应用返回对应的实例对象，调用 mount 方法进行挂载到指定的选择器元素上
+   createApp(App).mount('#app')
+   ```
+
+4. 启动内部服务器，查看效果
+
+## 2.4 项目打包发布
+
+- 使用 `npm run build ` 打包项目
+
+### 发布1：使用静态服务器工具包
+
+1. 安装全局静态服务器 `npm i -g serve`
+2. `serve dist`
+3. 访问：`http://loaclhost:5050`
+
+### 发布2：使用动态 web 服务器(tomcat)
+
+## 2.5 eslint
+
+### 1) 说明
+
+1. ESLint 是一个代码规范检查工具
+2. 它定义了很多特定的规则，一旦代码违背了某一个规则，eslint 就会发出提示
+3. 基本已经替换 JSLint
+4. 官网：http://eslint.org/
+
+### 2) 提供的支持
+
+1. ES
+2. JSX
+3. style 检查
+4. 自定义错误和提示
+
+### 3) ESLint 提供以下几种校验
+
+![image-20201229110053907](README.assets/image-20201229110053907.png)
+
+### 4) 规则的错误等级
+
+-  0：关闭规则
+-  1：打开规则，并且作为一个警告(信息打印黄色字体)
+-  2：打开规则，并且作为一个错误(信息打印红色字体)
+
+## demo1: comment manage
+
+### 1) 组件化开发流程
+
+- 组件化开发流程
+  1. 组件拆分
+  2. 静态组件
+  3. 动态组件
+     - 动态初始化显示数据
+     - 交互
+
+### 2) 组件拆分
+
+- 静态页面 - 组件拆分
+
+  ![image-20201229135101690](README.assets/image-20201229135101690.png)
+
+  判断组件的依据：判断数据是 **某些组件**(放在共同的父组件中) / **某个组件**(放在组件中) 中需要使用的
+
+### 3) 初始化显示
+
+1. 先拆分 App , Add , List 为三个不同的组件
+
+   1. Add.vue
+
+      ```vue
+      <template>
+          <div class="col-md-4">
+              <form class="form-horizontal">
+                  <div class="form-group">
+                      <label>用户名</label>
+                      <input type="text" class="form-control" placeholder="用户名">
+              	</div>
+                  <div class="form-group">
+                      <label>评论内容</label>
+                      <textarea class="form-control" rows="6" placeholder="评论内容"></textarea>
+                  </div>
+                  <div class="form-group">
+                      <div class="col-sm-offset-2 col-sm-10">
+                      <button type="button" class="btn btn-default pull-right">提交</button>
+          		</div>
+                  </div>
+              </form>
+          </div>
+      </template>
+      
+      <script>
+          export default {};
+      </script>
+      .....
+      ```
+
+   2. List.vue
+
+      ```vue
+      <template>
+      <div class="col-md-8">
+          <h3 class="reply">评论回复：</h3>
+          <h2 style='display: none'>暂无评论，点击左侧添加评论！！！</h2>
+          <ul class="list-group">
+          </ul>
+          	<li class="list-group-item">
+                  <div class="handle">
+                      <a href="javascript:;">删除</a>
+                  </div>
+                  <p class="user"><span>CJH</span><span>说:</span></p>
+                  <p class="centence">巴御前天下第一！</p>
+              </li>
+          </div>
+      </template>
+      
+      <script>
+      </script>
+      
+      <style>
+          .reply {
+              margin-top: 0px;
+          }
+          li {
+              transition: .5s;
+              overflow: hidden;
+          }
+          
+          .handle {
+              width: 40px;
+              border: 1px solid #ccc;
+              background: #fff;
+              position: absolute;
+              right: 10px;
+              top: 1px;
+              text-align: center;
+          }
+      
+          .handle a {
+              display: block;
+              text-decoration: none;
+          }
+      
+          .list-group-item .centence {
+              padding: 0px 50px;
+          }
+      
+          .user {
+              font-size: 22px;
+          }
+      </style>
+      ```
+
+   3. App.vue - 在父级组件中引入两个子级组件(List,Add)
+
+      ```vue
+      <template>
+          <div>
+              <header class="site-header jumbotron">
+                  <div class="container">
+                  <div class="row">
+                      <div class="col-xs-12">
+                      <h1>请发表对{{name}}的评论</h1>
+                      </div>
+                  </div>
+                  </div>
+              </header>
+              <div class="container">
+                  <Add />
+                  <List />
+              </div>
+          </div>
+      </template>
+      
+      <script lang="ts">
+          import Add from "./components/Add.vue"
+          import List from "./components/List.vue"
+          export default {
+              components: {
+                  Add,
+                  List
+              },
+              data() {
+                  return {
+                      name: "Vue",
+                  }
+              }
+          }
+      </script>
+      ...
+      ```
+
+2. 静态组件搭建完成
+
+3. 动态初始化显示数据
+
+   1. 划分 **item** 组件所在的位置 - 由于 Add(添加数据) 和 List(展示数据) 组件中都需要使用该组件，所以将其**需要使用的数据**放在共同的父级组件中
+
+   2. 数据需要由 App 父级组件传递给 List 子级组件用于展示(**组件通信**)
+
+      这里先使用在使用 子级组件的标签中使用**标签属性** 的方式完成(后面会细讲)
+
+      **建议标签属性名和 data 数据属性名相同，且标签属性名前还需要加上:**
+
+   3. 修改 App.vue
+
+      ```vue
+      <template>
+          <div>
+              ....
+              <div class="container">
+                  <Add />
+                  <!-- 使用 data 数据属性名作为标签属性将父组件的数据传递给子组件(组件通信) -->
+                  <!-- 属性名建议和 data 数据属性相同，且如果需要传入 data 中的数据，还需要在前面加上: -->
+                  <List :comments="comments"/>
+              </div>
+          </div>
+      </template>
+      
+      <script lang="ts">
+          import Add from "./components/Add.vue"
+          import List from "./components/List.vue"
+          export default {
+              components: {
+                  Add,
+                  List
+              },
+              data() {
+                  return {
+                      name: "Vue",
+                      /* 存放 item 数据的数组对象 */
+                      comments: [
+                          {
+                              name: "TJH",
+                              content: "欸嘿嘿嘿"
+                          },
+                          {
+                              name: "SGL",
+                              content: "欸嘿嘿hi"
+                          },
+                          {
+                              name: "CGH",
+                              content: "阿巴阿巴阿巴"
+                          }
+                      ]
+                  }
+              }
+          }
+      </script>
+      ...
+      ```
+
+   4. 在 List.vue 子级组件中接收父级组件传递的数据
+
+      这里使用在暴露默认接口时，使用 `props` 属性接收数据，该数据成为**组件对象**的属性
+
+      > 简略写法: props: ['父组件标签属性名']
+      >
+      > 组件对象: 也就是 this，虽然不是 vm，但和 vm 实例对象的使用方法一致
+
+      同时还需要将数据传递给 `Item` 组件
+
+      ```vue
+      <template>
+         <div class="col-md-8">
+              <h3 class="reply">评论回复：</h3>
+              <h2 style='display: none'>暂无评论，点击左侧添加评论！！！</h2>
+              <ul class="list-group">
+                  <!-- 将遍历出来的数据交给 item 组件进行处理 -->
+                  <Item v-for="(comment,index) in comments" :key="index" :comment="comment"/>
+              </ul>
+          </div>
+      </template>
+      
+      <script>
+          import Item from "./item"
+          export default {
+              // 声明接收属性: 这个属性会成为组件对象的属性
+              // 组件对象：也就是 this，虽然不是 vm，但和 vm 实例对象的使用方法一致
+              props: ['comments'], // 指定简略写法 - 只指定属性名
+              components: {
+                  Item
+              }
+          };
+      </script>
+      
+      <style>
+          .reply {
+              margin-top: 0px;
+          }
+      </style>
+      ```
+
+   5. 在 item 组件中接收数据并展示
+
+      > 复杂写法 - props: {属性名: 属性值类型}
+
+      ```vue
+      <template>
+          <li class="list-group-item">
+              <div class="handle">
+                  <a href="javascript:;">删除</a>
+              </div>
+              <p class="user"><span>{{comment.name}}</span><span>说:</span></p>
+              <p class="centence">{{comment.content}}</p>
+          </li>
+      </template>
+      
+      <script lang="ts">
+          export default {
+              props: { //声明接收属性(完整写法)：指定属性名和属性值的类型
+                  comment: Object
+              }
+          }
+      </script>
+      
+      <style>
+          li {
+              transition: .5s;
+              overflow: hidden;
+          }
+      
+          .handle {
+              width: 40px;
+              border: 1px solid #ccc;
+              background: #fff;
+              position: absolute;
+              right: 10px;
+              top: 1px;
+              text-align: center;
+          }
+      
+          .handle a {
+              display: block;
+              text-decoration: none;
+          }
+      
+          .list-group-item .centence {
+              padding: 0px 50px;
+          }
+      
+          .user {
+              font-size: 22px;
+          }
+      </style>
+      ```
+
+4. 交互添加
+
+   1. 在 Add.vue 中定义 DOM 回调函数 `add()`，在内部定义具体的业务逻辑
+
+      ```javascript
+      methods: {
+          add() {
+              // 1. 校验数据
+              const name = this.name.trim();
+              const content = this.content.trim();
+              if(!name || !content){
+                  alert('确保输入的值不为空');
+                  return;
+              }
+              // 2. 封装数据
+              const comment = { name,content };
+              // 3. 添加到 App 组件的 comments 数组中
+              this.addComment(comment);
+              // 4. 恢复默认值
+              this.name = '';
+              this.content = '';
+          }
+      }
+      ```
+
+   2. 在 App.vue 中定义添加到 `comments` 数组的方法
+
+      ```javascript
+      methods: {
+          addComment(comment: {name: string;content: string}){
+              (this as any).comments.unshift(comment);
+          }
+      }
+      ```
+
+   3. 使用 **组件通信** 将 App.vue 中的方法'告诉' 子组件 Add.vue
+
+      ```html
+      <Add :addComment="addComment"/>
+      ```
+
+   4. 在 Add.vue 中接收该数据
+
+      ```javascript
+      props: {
+          // 定义接收数据属性的详细属性
+          addComment: {
+              // 指定类型
+              type: Function,
+              // 是否具有必要性，默认为 false
+              required: true
+          }
+      }
+      ```
+
+   5. 测试
+
+5. 交互删除
+
+   1. 在 item.vue 中定义删除的方法
+
+      ```typescript
+      remove(): void {
+          const {comment,removeComment,index} = (this as any);
+          /* 使用模板字符串 */
+          if(window.confirm(`你确定删除${comment.name}的评论吗`)){
+              removeComment(index);
+          }
+      }
+      ```
+
+   2. 在 App 传输删除函数 -> List.vue -> item.vue - removeComment() 即可
+
+## demo2: todo list
+
+# 第三章 vue 3
 
 ## 3.1 基本介绍
 
@@ -1763,7 +2299,7 @@
 
    下载后可以使用 **vue -V** 查看版本，确保版本在 4.5.0 以上
 
-2. 创建项目 **vue-create 项目名**
+2. 创建项目 **vue create 项目名**
 
 3. 选择自定义配置
 
