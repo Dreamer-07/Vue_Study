@@ -1,7 +1,7 @@
 <template>
     <ul class="todo-main">
         <todo-item v-for="(todo,index) in todos" :key="index" 
-        :todo="todo" :index="index" />
+        :todo="todo" :index="index" @showbox="showbox"/>
     </ul>
 </template>
 
@@ -13,6 +13,11 @@
         },
         components: {
             TodoItem
+        },
+        methods: {
+            showbox(newValue: boolean,index: number){
+                (this as any).todos[index].isChoose = newValue
+            }
         }
     }
 </script>

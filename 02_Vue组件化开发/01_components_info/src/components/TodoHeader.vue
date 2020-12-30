@@ -12,22 +12,16 @@
                 title: ''
             }
         },
-        props: {
-            addItem: Function
-        },
         methods: {
             add(){
-                // 1. 检验数据的合法性
                 const title = (this as any).title.trim();
                 if(!title){
                     alert("请输入数据");
                     return;
                 }
-                // 2. 封装对象
-                const todo = { title , isChoose: true};
-                // 3. 调用父组件的方法添加到组件中
-                (this as any).addItem(todo);
-                // 4. 清空数据
+                const todo = { title , isChoose: false};
+                // 使用 this.$emit 触发指定事件
+                (this as any).$emit('addItem',todo);
                 (this as any).title = "";
             }
         }
