@@ -13,6 +13,7 @@
   import TodoHeader from "./components/TodoHeader.vue"
   import TodoList from "./components/TodoList.vue"
   import TodoFooter from "./components/TodoFooter.vue"
+  import storageUtil from "./utils/storageUtil"
 
   export default {
     data (){
@@ -23,17 +24,18 @@
           - 使用 JSON.parse 解析 JSON 字符串
           - 使用 || 防止首次加载数据为空导致报错
         */
-        todos: JSON.parse(window.localStorage.getItem("todos_key") || '[]')
+        todos: storageUtil.readStorage
       }
     },
     watch: {
       // 监视
       todos: {
         deep: true, //开启深度监视
-        handler(value: []){
-          // 在每次更新之后将新的数据保存到本地
-          window.localStorage.setItem("todos_key",JSON.stringify(value));
-        }
+        handler: storageUtil.saveStorage
+        /* ~= handler:  function(todos: {title: string;isChoose: boolean}[]) {
+                          window.localStorage.setItem(TODOS_KEY,JSON.stringify(todos))
+                        } 
+        */
       }
     },
     components: {

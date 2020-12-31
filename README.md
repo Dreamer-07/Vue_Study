@@ -2045,14 +2045,18 @@
    </template>
    ```
 
-2. 父组件中传入对应的标签数据
-
-   语法：\<标签 slot="唯一标识">标签体内容</标签>
+2. 父组件中传入对应的标签数据 
 
    ```html
-   <vue-child>
-   	<div slot="xxx">xxx 对应的标签结构</div>
-       <div slot="yyy">yyyy 对应的标签结构</div>
+<vue-child>
+       <!-- 使用 v-slot 指令(好像会因为 eslint 报错) -->
+       <template v-slot:info>
+           <span>已完成{{completed}}</span> / 全部{{this.todos.length}}
+       </template>
+       <!-- 可以简化写成 #标识  -->
+       <template #selectAll>
+           <input type="checkbox" v-model="allChecked"/>
+       </template>
    </vue-child>
    ```
 
@@ -2217,16 +2221,12 @@
 
    2. 数据需要由 App 父级组件传递给 List 子级组件用于展示(**组件通信**)
 
-      这里先使用在使用 子级组件的标签中使用**标签属性** 的方式完成(后面会细讲)
-
-      **建议标签属性名和 data 数据属性名相同，且标签属性名前还需要加上:**
-
    3. 修改 App.vue
 
       ```vue
-      <template>
+   <template>
           <div>
-              ....
+           ....
               <div class="container">
                   <Add />
                   <!-- 使用 data 数据属性名作为标签属性将父组件的数据传递给子组件(组件通信) -->
@@ -2268,21 +2268,21 @@
       </script>
       ...
       ```
-
+   
    4. 在 List.vue 子级组件中接收父级组件传递的数据
-
+   
       这里使用在暴露默认接口时，使用 `props` 属性接收数据，该数据成为**组件对象**的属性
 
       > 简略写法: props: ['父组件标签属性名']
-      >
+   >
       > 组件对象: 也就是 this，虽然不是 vm，但和 vm 实例对象的使用方法一致
 
       同时还需要将数据传递给 `Item` 组件
-
+   
       ```vue
-      <template>
+   <template>
          <div class="col-md-8">
-              <h3 class="reply">评论回复：</h3>
+           <h3 class="reply">评论回复：</h3>
               <h2 style='display: none'>暂无评论，点击左侧添加评论！！！</h2>
               <ul class="list-group">
                   <!-- 将遍历出来的数据交给 item 组件进行处理 -->
@@ -2309,15 +2309,15 @@
           }
       </style>
       ```
-
+   
    5. 在 item 组件中接收数据并展示
-
+   
       > 复杂写法 - props: {属性名: 属性值类型}
 
       ```vue
-      <template>
+   <template>
           <li class="list-group-item">
-              <div class="handle">
+           <div class="handle">
                   <a href="javascript:;">删除</a>
               </div>
               <p class="user"><span>{{comment.name}}</span><span>说:</span></p>
@@ -2363,7 +2363,7 @@
           }
       </style>
       ```
-
+   
 4. 交互添加
 
    1. 在 Add.vue 中定义 DOM 回调函数 `add()`，在内部定义具体的业务逻辑
@@ -2436,6 +2436,35 @@
       ```
 
    2. 在 App 传输删除函数 -> List.vue -> item.vue - removeComment() 即可
+
+
+
+
+
+# 第三章 vue-ajax
+
+**项目中常用的两个库**
+
+1. vue-resouce
+
+   vue 插件，非官方库，vue1.x 使用广泛
+
+2. axios
+
+   通用的 ajax 请求库，官方推荐
+
+## 3.1 axios 的使用
+
+> 官方文档：http://www.axios-js.com/
+
+1. 下载安装对应的库 `npm i axios --save`
+2. 在需要使用的组件中引入模块 **import axios from 'axios'**
+
+## 3.2 测试接口
+
+## 3.3 
+
+
 
 ## demo2: todo list
 

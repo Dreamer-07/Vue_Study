@@ -7,11 +7,22 @@
       <!-- 2. 组件间通信 - 使用自定义事件1 -->
       <todo-header  @addItem="addItem" />
       
-      <!-- 3. 使用 PubSub.JS 进行消息订阅和发布  -->
+      <!-- 3. 使用 PubSub .JS 进行消息订阅和发布  -->
       <todo-list :todos="todos" />
 
       <!-- 4. 使用 slot -->
-      <todo-footer :todos="todos" :removeCompleted="removeCompleted" :selectAll="selectAll" />
+      <todo-footer>
+        <!-- 使用 template 标签和 v-slot 指定传输对应的标签数据 -->
+        <template #selectAll>
+          <input type="checkbox" v-model="allChecked"/>
+        </template>
+        <template #info>
+          <span>已完成{{completed}}</span> / 全部{{this.todos.length}}
+        </template>
+        <template #removeBtn>
+          <button class="btn btn-danger" @click="removeCompleted">清除已完成任务</button>
+        </template>
+      </todo-footer>
     </div>
   </div>
 </template>
@@ -32,6 +43,26 @@
           - 使用 || 防止首次加载数据为空导致报错
         */
         todos: JSON.parse(window.localStorage.getItem("todos_key") || '[]')
+      }
+    },
+    computed: {
+      completed (){
+          /* 
+          reduce() 会迭代数组的所有项，然后构建一个最终返回的值,从数组的第一项开始，逐个遍历到最后。 
+              传给 reduce() 的函数接收 4 个参数：前一个值、当前值、项的索引和数组对象。
+              这个函数返回的任何值都会作为第一个参数自动传给下一项。第一次迭代发生在数组的第二项上，因此第一个参数是数组的第一项，第二个参数就是数组的第二项。
+          reduce() 函数的第一个参数是处理数据的函数，第二个参数是初始值
+          */
+          return (this as any).todos.reduce((count: number,todo: {title: string; isChoose: boolean}) => count + (todo.isChoose ? 1 : 0),0)
+      },
+      allChecked: {
+          get (){
+              const _this = this as any
+              return _this.todos.length === _this.completed && _this.completed > 0
+          },
+          set (value: boolean){
+              (this as any).selectAll(value)
+          }
       }
     },
     mounted() {
