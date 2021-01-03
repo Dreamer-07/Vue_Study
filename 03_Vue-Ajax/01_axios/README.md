@@ -1,4 +1,4 @@
-# 01_vue-axios
+# 01_axios
 
 ## Project setup
 ```

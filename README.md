@@ -1906,7 +1906,7 @@
 
 2. 在子组件中声明 **props**  配置接收
 
-   ```
+   ```typescript
    // 方式1：只指定名称
    props: ['setName'];
    
@@ -2001,7 +2001,7 @@
 
    回调函数接收多个参数，第一个参数固定为 msg,后面的参数为消息发布时传入的参数
 
-   ```javascript
+   ```typescript
    PubSub.subscribe('removeItem',(msg: string,index: number) => {
        (this as any).removeItem(index);
    })
@@ -2224,9 +2224,9 @@
    3. 修改 App.vue
 
       ```vue
-   <template>
-          <div>
-           ....
+      <template>
+      	<div>
+              ....
               <div class="container">
                   <Add />
                   <!-- 使用 data 数据属性名作为标签属性将父组件的数据传递给子组件(组件通信) -->
@@ -2235,7 +2235,6 @@
               </div>
           </div>
       </template>
-      
       <script lang="ts">
           import Add from "./components/Add.vue"
           import List from "./components/List.vue"
@@ -2268,21 +2267,22 @@
       </script>
       ...
       ```
-   
+      
    4. 在 List.vue 子级组件中接收父级组件传递的数据
    
       这里使用在暴露默认接口时，使用 `props` 属性接收数据，该数据成为**组件对象**的属性
+   
+   > 简略写法: props: ['父组件标签属性名']
+   
+      >
+      >组件对象: 也就是 this，虽然不是 vm，但和 vm 实例对象的使用方法一致
 
-      > 简略写法: props: ['父组件标签属性名']
-   >
-      > 组件对象: 也就是 this，虽然不是 vm，但和 vm 实例对象的使用方法一致
-
-      同时还需要将数据传递给 `Item` 组件
+         同时还需要将数据传递给 `Item` 组件
    
       ```vue
-   <template>
-         <div class="col-md-8">
-           <h3 class="reply">评论回复：</h3>
+      <template>
+      	<div class="col-md-8">
+              <h3 class="reply">评论回复：</h3>
               <h2 style='display: none'>暂无评论，点击左侧添加评论！！！</h2>
               <ul class="list-group">
                   <!-- 将遍历出来的数据交给 item 组件进行处理 -->
@@ -2310,21 +2310,21 @@
       </style>
       ```
    
+   
    5. 在 item 组件中接收数据并展示
    
-      > 复杂写法 - props: {属性名: 属性值类型}
-
+   > 复杂写法 - props: {属性名: 属性值类型}
+   
       ```vue
-   <template>
-          <li class="list-group-item">
-           <div class="handle">
-                  <a href="javascript:;">删除</a>
-              </div>
-              <p class="user"><span>{{comment.name}}</span><span>说:</span></p>
-              <p class="centence">{{comment.content}}</p>
+      <template>
+      	<li class="list-group-item">
+          	<div class="handle">
+              	<a href="javascript:;">删除</a>
+          	</div>
+          	<p class="user"><span>{{comment.name}}</span><span>说:</span></p>
+          	<p class="centence">{{comment.content}}</p>
           </li>
       </template>
-      
       <script lang="ts">
           export default {
               props: { //声明接收属性(完整写法)：指定属性名和属性值的类型
@@ -2332,13 +2332,11 @@
               }
           }
       </script>
-      
       <style>
           li {
               transition: .5s;
               overflow: hidden;
           }
-      
           .handle {
               width: 40px;
               border: 1px solid #ccc;
@@ -2452,21 +2450,262 @@
 2. axios
 
    通用的 ajax 请求库，官方推荐
+   
+   axios 是一个基于 **Promise** 用于浏览器和 nodejs 的 HTTP 客户端。简单的理解就是ajax的封装
+   
+   本身具有的特征
+   
+   1. 从浏览器中创建 XMLHttpRequest
+   2. 从 node.js 发出 http 请求
+   3. 支持 Promise API
+   4. 拦截请求和响应
+   5. 转换请求和响应数据
+   6. 取消请求
+   7. 自动转换JSON数据
+   8. 客户端支持防止 CSRF/XSRF
 
 ## 3.1 axios 的使用
 
 > 官方文档：http://www.axios-js.com/
 
-1. 下载安装对应的库 `npm i axios --save`
-2. 在需要使用的组件中引入模块 **import axios from 'axios'**
+1. 下载安装对应的库 `npm i -D axios`
 
-## 3.2 测试接口
+2. 在需要使用的组件中引入 `import axios from 'axios'`
 
-## 3.3 
+3. 调用相应的 API 发送请求
+
+4. 处理返回的 Promise 对象 - 调用 then() & catch() 方法
+
+5. ```vue
+   <template>
+   <div class="hello">
+       <h1>{{name}}</h1>
+       <p v-if="!isShow">正在加载中 loading...</p>
+       <p v-else>{{info}}</p>
+       </div>
+   </template>
+   
+   <script lang="ts">
+       import axios from 'axios'
+   
+       export default {
+           name: '巴御前添加第一！',
+           props: {
+               msg: String,
+           },
+           data () {
+               return {
+                   isShow: ''
+               }
+           },
+           // 在 mounted(挂载结束之后) 时发送 Ajax 请求数据
+           mounted () {
+               // 发送 get 请求
+               axios.get("https://api.coindesk.com/v1/bpi/currentprice.json")
+               //返回的是 Promise 对象, 使用 then() 方法进行处理
+                   .then(response => {(this as any).isShow = response.data.api})
+               // 使用 catch 方法进行异常处理
+                   .catch(error => console.error(error));
+           }
+       };
+   </script>
+   
+   <!-- Add "scoped" attribute to limit CSS to this component only -->
+   <style scoped>
+       h3 {
+           margin: 40px 0 0;
+       }
+       ul {
+           list-style-type: none;
+           padding: 0;
+       }
+       li {
+           display: inline-block;
+           margin: 0 10px;
+       }
+       a {
+           color: #42b983;
+       }
+   </style>
+   
+   ```
+
+## demo: pages_list
+
+> 输入用户名，从 github 上搜索返回对应的数据显示
+
+1. 拆分页面
+
+   ![image-20210103100839536](README.assets/image-20210103100839536.png)
+
+2. 在 `public/` 中导入 `bootstrap.css` 后引入到 index.html 中
+
+3. 在 `src/` components 下编写组件
+
+4. Search.vue
+
+   ```vue
+   <template>
+       <section class="jumbotron">
+         <h3 class="jumbotron-heading">Search Github Users</h3>
+         <div>
+           <input type="text" placeholder="enter the name you search" v-model="searchName"/>
+           <button @click="search">Search</button>
+         </div>
+       </section> 
+   </template>
+   
+   <script lang="ts">
+       import PubSub from 'pubsub-js'
+       export default {
+         data () {
+           return {
+             searchName: ''
+           }
+         },
+         methods: {
+           search () {
+             const searchName  = (this as any).searchName.trim();
+             if(searchName){
+               // 发布消息
+               PubSub.publish('search',(this as any).searchName)
+             }
+           }
+         }
+       }
+   </script>
+   ```
+
+   **使用 PubSub 进行组件通信**
+
+5. Main.vue
+
+   ```vue
+   <template>
+       <h2 v-if="firstView">请输入用户名</h2>    
+       <h2 v-if="loading">Loading...</h2>
+       <h2 v-if="errorMsg">{{errorMsg}}</h2>
+       <div class="row">
+         <div class="card" v-for="(user,index) in userList" :key="index">
+           <a :href="user.url" target="_blank">
+             <img :src="user.imgUrl" style='width: 100px'/>
+           </a>
+           <p class="card-text">{{user.name}}</p>
+         </div>
+       </div>
+   </template>
+   
+   <script lang="ts">
+       import PubSub from 'pubsub-js'
+       import axios from 'axios'
+       export default {
+           data () {
+               return {
+                   firstView: true,
+                   loading: false,
+                   userList: null,
+                   errorMsg: ''
+               }
+           },
+           mounted() {
+             // 订阅消息
+             PubSub.subscribe('search',(msg: string,searchName: string) => {
+               const that = (this as any)
+               const URL = `https://api.github.com/search/users?q=${searchName}`
+               // 更新状态
+               that.firstView = false;
+               that.loading = true;
+               that.userList = null;
+               that.errorMsg = '';
+               // 发送 Ajax 请求
+               axios.get(URL)
+               // 响应成功
+               .then(response => {
+                 that.loading = false;
+                 const result = response.data;
+                 that.userList = result.items.map((item: any) => ({
+                   //  user.url: 用户主页地址
+                   url: item.html_url,
+                   //  user.img_url: 用户头像图片地址
+                   imgUrl: item.avatar_url!,
+                   //  user.name: 用户名
+                   name: item.login
+                 }))
+               // 响应失败
+               }).catch(error => {
+                 that.loading = false;
+                 that.errorMsg = error.message;
+               })
+             });
+           },
+       }
+   </script>
+   
+   <style>
+       .card {
+       float: left;
+       width: 33.333%;
+       padding: .75rem;
+       margin-bottom: 2rem;
+       border: 1px solid #efefef;
+       text-align: center;
+       }
+   
+       .card > img {
+       margin-bottom: .75rem;
+       border-radius: 100px;
+       }
+   
+       .card-text {
+       font-size: 85%;
+       }
+   </style>
+   ```
+
+   箭头函数的返回值如果是一个**对象**，需要在外层加上 ()
+
+   使用 `axios` 进行 Ajax 请求
+
+6. App.vue
+
+   ```vue
+   <template>
+     <div class="container">
+       <Search />
+       <user-main />
+     </div>
+   </template>
+   
+   <script lang="ts">
+     import Search from './components/Search.vue'
+     import Main from './components/Main.vue'
+     export default {
+       components: {
+         Search,
+         UserMain: Main
+       }
+     }
+   </script>
+   ```
+
+   如果组件标签和 HTML 标签重名，就需要额外指定，类型为对于的组件即可
+
+# 第四章 vue UI 组件库
+
+## 4.1 常用的 UI 库
+
+1. Mint UI
+   - 饿了么开源的基于 Vue2.x 开发的 **移动端** UI 组件
+2. Elment
+   - 饿了么开源的基于 Vue3.x 开发的 **PC 端** UI 组件
 
 
 
-## demo2: todo list
+# 第五章 vue-router
+
+# 第六章 vuex
+
+# 第七章 vue 源码分析
 
 # 第三章 Vue 3
 
