@@ -2439,7 +2439,7 @@
 
 
 
-# 第三章 vue-ajax
+# 第三章 vue-Ajax
 
 **项目中常用的两个库**
 
@@ -2690,22 +2690,165 @@
 
    如果组件标签和 HTML 标签重名，就需要额外指定，类型为对于的组件即可
 
-# 第四章 vue UI 组件库
+# 第四章 vue-UI 组件库
 
 ## 4.1 常用的 UI 库
 
 1. Mint UI
    - 饿了么开源的基于 Vue2.x 开发的 **移动端** UI 组件
+   - 官方文档：http://mint-ui.github.io/docs/#/zh-cn2
 2. Elment
    - 饿了么开源的基于 Vue3.x 开发的 **PC 端** UI 组件
+   - 官方文档：https://element.eleme.cn/#/zh-CN
+3. 更多可以参考: https://segmentfault.com/a/1190000021876315
 
+## 4.2 Mint UI
 
+> 可以使用 vue2.x 的版本，目前许多 UI 库还不能兼容 vue3.x
 
-# 第五章 vue-router
+1.  `npm i mint-ui -S` 安装 mint-ui
 
-# 第六章 vuex
+2. `npm i -D babel-plugin-component`  安装这个插件完成 **按需加载**
 
-# 第七章 vue 源码分析
+3. 修改 **babel.config.js** 文件
+
+   ```js
+   module.exports = {
+       presets: [
+           '@vue/cli-plugin-babel/preset'
+       ],
+       plugins: [
+           [
+               "component",
+               {
+                   "libraryName": "mint-ui",
+                   "style": true
+               },
+               "mint-ui"
+           ]
+       ]
+   }
+   ```
+
+4. 如果是移动端,需要修改 index.html 
+
+   ```html
+   <!-- 适配手机屏幕 -->
+   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" /> 
+   <!-- 解决移动端点击异常 -->
+   <script src="https://as.alipayobjects.com/g/component/fastclick/1.0.6/fastclick.js"></script>
+   <script> 
+       if ('addEventListener' in document) { 	
+           document.addEventListener('DOMContentLoaded', function() { 
+               FastClick.attach(document.body); 
+           }, false); 
+       }if(!window.Promise) {
+           document.writeln('<script src="https://as.alipayobjects.com/g/component/es6-promise/3.2.2/es6-promise.min.js" '+'>'+'<'+'/'+'script>'); 
+       } 
+   </script>
+   ```
+
+5.  在 **mian.ts** 中引入 mint-ui 組件
+
+    ```typescript
+    // 引入 UI 组件
+    import { Button } from 'mint-ui'
+    // 注册成全局标签，第一个参数为标签名，建议使用自带的 组件.name; 第二个参数为对应的组件
+    Vue.component(Button.name,Button)
+    ```
+
+6.  在 **App.vue** 中使用对应的 UI 组件
+
+    ```vue
+    <template>
+      <div id="app">
+        <mt-button type="default">default</mt-button>
+      </div>
+    </template>
+    ```
+
+7.  运行项目，查看效果
+
+    ![image-20210105105322862](README.assets/image-20210105105322862.png)
+
+8.  添加对应的事件监听
+
+    建议加上 `.native` 修饰符，代表使用 **原生的 JS 事件**，而不是 vue 包装的
+
+    对于**非标签组件**，建议在组件中局部注册
+
+    ```vue
+    <template>
+    	<div id="app">
+        	<mt-button type="default" @click.native="testToast">default</mt-button>
+        </div>
+    </template>
+    
+    <script lang="ts">
+        import { Component, Vue } from 'vue-property-decorator';
+        // 导入使用的 非标签组件
+        import { Toast } from 'mint-ui'
+        export default {
+            methods: {
+                testToast() {
+                    Toast('巴御前天下第一!!');
+                }
+            }
+        }
+    </script>
+    ```
+
+9.  测试
+
+    ![image-20210105110003269](README.assets/image-20210105110003269.png)
+
+## 4.3 Element UI
+
+1. `npm i -S element-ui` 安装
+
+2. 在 **mian.ts** 中完成引入
+
+   ```typescript
+   // 引入 ElementUI 的全部組件
+   import ElementUI from 'element-ui'
+   // 还需要单独的引入样式文件
+   import 'element-ui/lib/theme-chalk/index.css'
+   // 注册插件
+   Vue.use(ElementUI)
+   
+   // 引入部分组件
+   import {Button , Select} from 'element-ui'
+   // 注册全局组件
+   Vue.component(Button.name,Button);
+   Vue.component(Select.name,Select)
+   ```
+
+3. 安装 `abel-plugin-component` 配置 **按需引入**(安装方式和 mint-ui 一样)
+
+4. 修改 babel.config.js
+
+   ```js
+   {
+     "presets": [["es2015", { "modules": false }]],
+     "plugins": [
+       [
+         "component",
+         {
+           "libraryName": "element-ui",
+           "styleLibraryName": "theme-chalk"
+         }
+       ]
+     ]
+   }
+   ```
+
+5. 参考官方文档在组件中使用即可
+
+# 第五章 vue-Router
+
+# 第六章 Vuex
+
+# 第七章 Vue 源码分析
 
 # 第三章 Vue 3
 
