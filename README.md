@@ -2846,6 +2846,258 @@
 
 # 第五章 vue-Router
 
+> 使用 vue3.x 和 vue-router 4.x
+
+## 5.1 基本説明
+
+1. **SPA 应用**：单页应用，一共应用中只有一个真实页面。
+
+   浏览器一开始会加载必需的HTML、CSS和JavaScript，之后所有的操作都在这张页面上完成，这一切都由JavaScript来控制。
+
+3. 路由链接：点击时不会向后台发起请求，而是加载对应的 **路由组件**，由对应的组件完成各自的请求
+
+4. 路由器：管理路由
+
+5. 路由：一对 key 和 value
+
+   - key 为对应的 path(路径) 
+
+   - value 在前台中为对应的 **组件**
+
+     ​			   后台中为 **处理请求的回调函数**
+
+6. vue - router 文档：https://router.vuejs.org/zh/installation.html
+
+7. **注意：** 如果使用的是 vue3.x ，需要使用 vue-router / vuex 时需要安装相应的 `alpha` 版本
+
+   参考博客：https://zhuanlan.zhihu.com/p/138444490
+
+## 5.2 相关的 API 说明
+
+1. 使用 vue-cli 创建项目时可以使用自带的 vue-router，也可以自己进行配置
+
+2. 修改 `package.json` 的 dependencies 项
+
+   ```json
+   "dependencies": {
+       ...
+       "vue-router": "^4.0.0-0" //主要是这个
+   }
+   ```
+
+   输入 `npm install` 安装相应的依赖
+
+3. 配置路由
+
+   ```typescript
+   const routes = [
+       // 配置一般路由
+       {
+           path: '路由链接',
+           component: 路由组件
+       },
+       // 配置自动跳转路由
+       {
+           path: '/',
+           redirect: '路由链接'
+       }
+   ]
+   ```
+
+4. 配置路由器
+
+   ```typescript
+   // 配置路由器
+   const router = createRouter({ // 路由器配置对象
+       history: createWebHistory(), //createWebHistory - 可以设置路由的 history 模式
+       routes // 路由配置对象
+   })
+   ```
+
+   
+
+## 5.3 基本路由
+
+**说明**
+
+- 对于 **路由组件** 通常放在 `src/views` 文件夹下
+- 对于 **路由配置** 通常放在 `src/router` 文件夹下
+- 对于 **非路由组件** 通常放在 `src/components` 文件夹下
+
+**使用**
+
+1. 在 views 下创建路由组件
+
+2. 在 router 下创建 `index.ts` 文件
+
+   ```typescript
+   /* 导入 vue-router
+       1. createRouter - 负责创建路由器
+       2. createWebHistory - 可以设置路由的 history 模式
+   */
+   import { createRouter , createWebHistory } from "vue-router"
+   
+   // 导入需要使用的 路由组件
+   import About from '../views/About.vue'
+   import Home from '../views/Home.vue'
+   
+   // 配置路由
+   const routes = [
+       // 配置一般路由
+       {
+           path: '/home',
+           component: Home
+       },
+       {
+           path: '/about',
+           component: About
+       },
+       // 配置自动跳转路由
+       {
+           path: '/',
+           redirect: Home
+       }
+   ]
+   
+   // 配置路由器
+   const router = createRouter({
+       history: createWebHistory(),
+       routes
+   })
+   
+   export default router
+   ```
+
+3. 在 `mian.ts` 中导入并注册插件
+
+   ```typescript
+   import { createApp } from 'vue'
+   import App from './App.vue'
+   import router from './router'
+   
+   createApp(App).use(router).mount('#app')
+   ```
+
+4. 在 `App.vue` 中使用路由标签
+
+   ```vue
+   <template>
+     <img alt="Vue logo" src="./assets/logo.png">
+     <header>
+       <!-- 定义路由链接 -->
+       <router-link to="/home"> home </router-link>
+       <br />
+       <router-link to="/about"> About </router-link>
+     </header>
+     <!-- 用来显示当前路由组件的页面 -->
+     <router-view></router-view>
+   </template>
+   ```
+
+5. 可以先运行项目，查看切换路由时，对应路由链接的 `class` 类名变化
+
+   被选中的路由链接会添加类名 `router-link-active`,配置相应的样式
+
+6. 可以在配置路由器时修改
+
+   ```typescript
+   // 配置路由器
+   const router = createRouter({
+       history: createWebHistory(),
+       routes,
+       linkActiveClass: 'router-link-active'
+   })
+   ```
+
+7. 启动，查看运行效果
+
+## 5.4 嵌套路由
+
+> 在路由内使用路由
+
+1. 设计路由组件 News & Messages
+
+   优化 v-for
+
+   ```vue
+   <template>
+       <ul>
+           <!-- 优化 v-for
+                   1. 如果遍历时不使用第二个参数(索引)，可以直接去除()
+                   2. 如果遍历的数据本身具有标识符，建议 :key 使用其
+           -->
+           <li v-for="message in messages" :key="message.id">
+               <a href="">{{message.title}}</a>
+           </li>
+       </ul>
+   </template>
+   ....
+   ```
+
+2. 注册路由
+
+   1. 在对应的父路由组件中添加 `children` 配置项
+
+   2. ```typescript
+      ....;
+      
+      import News from '../views/News.vue'
+      import Messages from '../views/Messages.vue'
+      
+      // 配置路由
+      const routes = [
+          // 配置一般路由
+          {
+              path: '/home',
+              component: Home,
+              children: [
+                  // 配置子路由
+                  {
+                      // path: '/news', //任何情况下，/ 都代表根路径
+                      path: '/home/news', //可以直接配置绝对路径 
+                      component: News
+                  },
+                  {
+                      path: 'messages', //也可以配置相对路径(参考父路由组件路径)
+                      component: Messages
+                  }
+              ]
+          },
+          ...
+      ]
+      
+      ```
+
+3. 在父路由组件中使用路由标签
+
+## 5.5 向路由组件传递数据
+
+### 方式一：路由路径携带数据参数(param/query)
+
+1. 配置路由
+
+   ```typescript
+   {
+       path: 'messages', // 也可以配置相对路径(参考父路由组件路径)
+           component: Messages,
+               children: [
+                   {
+                       // 对于路径上不确定的值，可以使用 :占位符 用来匹配任意的值
+                       path: '/home/messages/detail/:id',
+                       component: MessageDetail
+                   }
+               ]
+   }
+   ```
+
+   
+
+### 方式二：\<router-link> 属性携带数据参数
+
+## 5.6 缓存路由组件
+
+## 5.7 编程式路由导航
+
 # 第六章 Vuex
 
 # 第七章 Vue 源码分析
