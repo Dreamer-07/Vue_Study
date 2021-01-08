@@ -3090,6 +3090,27 @@
    }
    ```
 
+2. 定义路由链接
+
+   ```vue
+   <ul>
+       <!-- 优化 v-for
+       	1. 如果遍历时不使用第二个参数(索引)，可以直接去除()
+       	2. 如果遍历的数据本身具有标识符，建议 :key 使用其
+       -->
+       <li v-for="message in messages" :key="message.id">
+           <!-- 使用 `` 定义动态的链接，通过路径参数传递数据 -->
+           <router-link :to="`/home/messages/detail/${message.id}`">
+               {{message.title}}
+           </router-link>
+       </li> 
+   </ul>
+   <hr />
+   <router-view />
+   ```
+
+3. 可以通过在 `devtools` 中查看路由组件的数据 `$route` (vue3.x 好像还不支持诶嘿嘿)
+
    
 
 ### 方式二：\<router-link> 属性携带数据参数
