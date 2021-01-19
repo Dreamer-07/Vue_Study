@@ -7,9 +7,17 @@
         <li v-for="message in messages" :key="message.id">
             <!-- 使用 `` 定义动态的链接，通过路径参数传递数据 -->
             <router-link :to="`/home/messages/detail/${message.id}`">
+            <!-- <router-link :to="`/home/messages/detail?id=${message.id}`"> -->
                 {{message.title}}
             </router-link>
+            <button @click="pushShow(message.id)">push查看</button>
+            <button @click="replaceShow(message.id)">replace查看</button>
         </li> 
+        <br>
+        <!-- 控制 $router 完成请求返回 -->
+        <button @click="$router.back()">back</button>
+        <br>
+        <button @click="$router.go(2)">go</button>
     </ul>
     <hr />
     <router-view />
@@ -41,6 +49,16 @@
                 ];
                 (this as any).messages = messages
             },1000)
-        }
+        },
+        methods: {
+            // 以 push 的方式访问新路由
+            pushShow (id: number) {
+                (this as any).$router.push(`/home/messages/detail/${id}`)
+            },
+            // 以 replace 的方式访问路由
+            replaceShow (id: number) {
+                (this as any).$router.replace(`/home/messages/detail/${id}`)
+            }
+        },
     }
 </script>

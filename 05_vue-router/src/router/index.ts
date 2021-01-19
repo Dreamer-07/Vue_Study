@@ -15,6 +15,7 @@ import MessageDetail from '../views/MessageDetail.vue'
 const routes = [
     // 配置一般路由
     {
+        name: 'home',
         path: '/home',
         component: Home,
         children: [
@@ -31,6 +32,7 @@ const routes = [
                     {
                         // 对于路径上不确定的值，可以使用 :占位符 用来匹配任意的值
                         path: '/home/messages/detail/:id',
+                        // path: '/home/messages/detail',
                         component: MessageDetail
                     }
                 ]
@@ -43,6 +45,7 @@ const routes = [
         ]
     },
     {
+        name: 'about',
         path: '/about',
         component: About
     },
@@ -57,6 +60,7 @@ const routes = [
 const router = createRouter({
     history: createWebHistory(),
     routes,
+    // 配置正在显示的路由组件对应的路由链接的类名
     linkActiveClass: 'router-link-active'
 })
 

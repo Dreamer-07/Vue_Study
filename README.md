@@ -3072,7 +3072,11 @@
 
 ## 5.5 向路由组件传递数据
 
-### 方式一：路由路径携带数据参数(param/query)
+### 方式一：路由路径携带数据参数(params/query)
+
+> params：通过请求地址携带数据
+>
+> query：通过配置请求参数携带数据
 
 1. 配置路由
 
@@ -3084,6 +3088,7 @@
                    {
                        // 对于路径上不确定的值，可以使用 :占位符 用来匹配任意的值
                        path: '/home/messages/detail/:id',
+                       // path: '/home/messages/detail',
                        component: MessageDetail
                    }
                ]
@@ -3101,6 +3106,7 @@
        <li v-for="message in messages" :key="message.id">
            <!-- 使用 `` 定义动态的链接，通过路径参数传递数据 -->
            <router-link :to="`/home/messages/detail/${message.id}`">
+           <!-- <router-link :to="`/home/messages/detail?id=${message.id}`"> -->
                {{message.title}}
            </router-link>
        </li> 
@@ -3109,15 +3115,130 @@
    <router-view />
    ```
 
-3. 可以通过在 `devtools` 中查看路由组件的数据 `$route` (vue3.x 好像还不支持诶嘿嘿)
+3. 可以通过在 `devtools` 中查看路由组件 `$route` 数据属性，该属性代表当前路由
 
+   (通过控制台也可以查看基本信息)
    
+   ![image-20210115143730604](README.assets/image-20210115143730604.png)
+   
+4. 在路由组件中通过 `$route.(params / query).key` 访问数据
 
-### 方式二：\<router-link> 属性携带数据参数
+   key 为指定的 路径占位符/参数名；获取的 value 是 `string` 类型的
+   
+5. 注意
+
+   - 路由组件中可以通过监听 `$route` 属性，及时更新数据
+   - 路由组件应该在 **mounted** 时，初始化页面信息；如果不设置可能会导致用户通过网址访问时会导致路由数据显示不正确
+
+### 方式二：\<router-view> 属性携带数据参数
+
+- 路由组件通过 **props** 属性接收(和组件间通信一致)
+
+- ```html
+  <!-- 通过 router-view 传递路由数据 -->
+  <router-view msg="巴御前天下第一！！"></router-view>
+  ```
 
 ## 5.6 缓存路由组件
 
+**说明**
+
+1. 默认情况下，切换路由组件时，被切换的路由组件对象就会死亡释放，再次切换回来时是重新创建的
+2. 对于用户的某些的数据(例如搜索框的数据等)，可以进行缓存**路由组件对象**，提高用户体验
+3. 仅适用于 **实时性低** 的应用
+4. **vue2.x 和 vue3.x 的使用方法不太相同**
+
+**使用**
+
+> 参考：https://blog.csdn.net/m0_46309087/article/details/109403655
+
+1. 在 \<router-view /> 标签中添加 \<keep-alive> 标签
+
+2. 指定其属性 `include` 为缓存的路由组件名
+
+   ```html
+   <!-- 用来显示当前路由组件的页面 -->
+   <router-view msg="巴御前天下第一！！" v-slot="{ Component }">
+       <!-- 可以通过 keep-alive 标签缓存路由组件对象 -->
+       <keep-alive include="about,home">
+           <component class="view" :is="Component" />
+       </keep-alive>
+   </router-view>
+   ```
+
+3. 在对应的路由组件中配置暴露对象时，指定 `name` 属性值
+
+   ```typescript
+   export default {
+       name: 'about',
+       props: {
+           msg: String
+       }
+   }
+   ```
+
+4. **对于 component 标签会在后面学习，这里先用**
+
 ## 5.7 编程式路由导航
+
+> 编程式：这里指通过 JS 完成路由链接的跳转
+
+### 1) SPA 单页应用
+
+- 只通过一个 html 文件，显示整个网站的所有内容
+- 页面交互**无刷新** & 页面跳转 **无刷新**
+- 实现技术：前后端分离(Ajax&Json) + 前端路由(更新视图但不重新请求页面)
+- 前端路由的实现原理：**匹配不同的 url 路径**，进行解析，加载不同的组件后动态的渲染 html 页面的内容
+- vue-router 默认是 `hash` 模式，另一种就是 `history `
+
+### 2) 两种模式
+
+1. **hash - H5之前**
+
+   - 只改变 # 后面的 url 片段(即 hash 值)。hash 值的变化，**并不会导致游览器向服务器发出请求**
+
+     同时每改变一次 # 后的部分，都会在游览器的访问历史中增加一个记录
+
+   - 每次 hash 值的变化，都会触发 `hashchange` 事件，可以通过监听其来实现更新页面部分的操作
+
+   - hash 模式的工作原理就是 `hashchange` 事件，可以在 window 监听 hash 的变化
+
+     ```typescript
+     window.onhashchange = function (event: {}) {
+         /* 
+         HashChangeEvent {oldURL: "http://localhost:8080/#/home/news", newURL: "http://localhost:8080/#/home/about",....}
+         该对象包含了 oldURL(跳转前的页面) 和 newURL(跳转后的页面) 属性
+         */
+         console.log(event);
+         /* 当前游览器地址，包含了 hash 值 */
+         console.log(location);
+         /* hash 值：地址中 # 后面的数据(包括 #) */
+         console.log(location.hash);
+     }
+     ```
+
+2. **history - H5之后**
+
+   - hash 只能更改 # 后面的 url 片段，而 history api 则给前端完全的自由(可以自由的修改 path)
+
+   - 可以丢掉丑陋的 #，同样在页面跳转时无需重新加载页面，也不会向服务端发送请求
+
+   - 但这种模式还需要**后台配置支持**，由于应用是单页客户端应用，如果后台没有正确的配置，当用户在游览器访问 URL 时就会出现 404；需要服务端增加一个覆盖所有情况的候选资源，在 URL 匹配不到任何静态资源时，返回一个 `index.html` 页面
+
+     注意：**刷新**和**首次访问**还是向服务端发送请求的
+
+### 3) $router
+
+> 组件的配置对象(Vm实例)中的属性，可以通过 this 访问
+>
+> $route：表示当前路由对象；$router：表示当前路由器对象
+
+- `this.$router.push(path)` 相当于点击路由链接(仍可以返回当前路由)
+- `this.$router.replace(path)` 用新路由替换当前路由(不可以返回当前路由)
+- `this.$router.back()`请求返回上一个路由
+- `this.$router.go(num)`请求 前进(+)/返回(-) 个路由
+
+****
 
 # 第六章 Vuex
 
