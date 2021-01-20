@@ -3242,6 +3242,336 @@
 
 # 第六章 Vuex
 
+> vue3 中引入的新的概念用来替换 Vuex，参考博客：https://zhuanlan.zhihu.com/p/114783130
+
+## 6.1 理解
+
+> 建议参考 demo 的第一部分
+
+**vuex是什么**
+
+- 官方中文文档：https://vuex.vuejs.org/zh/
+- 为 vue 应用中的**多个组件的共享状态**进行**集中式**的管理(读/写)
+
+**vue应用: 状态自管理应用**
+
+- 图示
+
+  <img src="README.assets/image-20210119202533253.png" alt="image-20210119202533253" style="zoom:67%;" />
+
+- 说明 - 单向数据流
+
+  1. `state` 相当于data，是驱动应用的数据源
+  2. `view` 以声明方式(按照指定的代码语法编写)将 `state` 映射到视图
+  3. `actions` 负责响应 view 所需要状态更新(包含 n 个更新状态的方法)
+
+**多组件共享状态的问题**
+
+1. 多个视图依赖于同一状态(state)
+2. 来自不同视图的行为需要变更同一状态
+3. 之前的解决方法
+   1. 将数据以及操作数据的行为都定义在父组件中
+   2. 将数据以及操作数据的行为传递给需要的各个子组件(有可能需要多级传递)
+   3. 这种解决方法只适用于简单应用，不适用于复杂应用(维护性太低)
+4. **vuex 就是来解决这个问题的**
+
+## 6.2 核心概念 & API
+
+**图示**
+
+![image-20210120132648633](README.assets/image-20210120132648633.png)
+
+1. Vuex 辅助管理 state、actions、mutations 三个部分
+2. Vue Components 依然依赖与 state 作为数据源
+3. Vue Components 依然通过 Actions 的方法更新 State；但 Actions **不会直接更新** State，而是通过 Mutations 间接更新
+
+### 1) state
+
+1. vuex 管理的状态对象(Vm 对象中的 data)
+2. 具有 **唯一性**
+
+### 2) mutations
+
+1. 包含多个直接更新 state 的方法(回调函数)的对象
+
+2. 由 action 中通过 `commit(mutation 名称)` 触发调用
+
+3. 只能包含同步代码，不能包含写异步代码
+
+   ```typescript
+   const mutations = {
+   	byq(state,data){
+           //更新 state 的某个属性
+       }
+   }
+   ```
+
+### 3) actions
+
+1. 包含多个事件回调函数的对象
+
+2. 通过 `commit(mutation 名称)` 调用指定的回调函数，简介更新 state
+
+3. 由 component 的 `$store.dispatch('action 名称')` 触发调用
+
+4. 可以包含异步代码
+
+   ```typescript
+   const actions = {
+       bxdy ({commit,state},data1) {
+       	commit(data1,data2)
+       }
+   }
+   ```
+
+### 4) getters
+
+1. 包含多个 getter 计算属性的对象
+2. 由组件通过 `$store.getters.xxx` 获取指定的计算属性值
+
+### 5) modules
+
+1. 包含多个 module
+2. 一个 module 是一个 store 的配置对象
+3. 与一个组件(包含共享数据)对应
+
+### 6) 向外暴露 store 对象
+
+```typescript
+// 导入需要使用的函数：createStore() 创建 Store 对象
+import { createStore } from 'vuex'
+
+// 导入 / 定义需要使用的模块(属性)
+const state = {};
+const actions = {};
+const mutations = {};
+const getters = {};
+
+// 导入创建的 Store 对象
+export default createStore({
+  state, // 状态对象
+  actions, // 包含多个更新 state 回调函数的对象
+  mutations, // 包含多个事件回调函数的对象
+  getters, // 包含多个 getter 计算属性的对象
+})
+```
+
+### 7) 组件中使用 
+
+### 8) 映射 store
+
+```typescript
+import { createApp } from 'vue'
+import App from './App.vue'
+import store from './store'
+
+createApp(App).use(store).mount('#app')
+```
+
+### 9) store 对象
+
+1. 所有用 vuex 管理的组件都会多一个属性 `$store`，它就是一个 store 对象
+2. 属性
+   - state: 可以获取注册的 state 对象
+   - getters: 可以获取注册的 getters 对象
+3. 方法
+   - dispatch(actionName,data)：分发调用 action
+
+## 6.3 结构分析
+
+## demo1: 计数器
+
+### 1) 不使用 Vuex
+
+1. 完成如下效果
+
+   ![image-20210119201051975](README.assets/image-20210119201051975.png)
+
+2. App.vue
+
+   ```vue
+   <template>
+     <main>
+       <p>click {{count}} times,count is {{evenOrOdd}}</p>
+       <div>
+         <button @click="increment">+</button>
+         <button @click="decrement">-</button>
+         <button @click="incrementIfOdd">increment if odd</button>
+         <button @click="incrementAsync">increment async</button>
+       </div>
+     </main>
+   </template>
+   
+   <script lang="ts">
+     export default {
+       data () {
+         return {
+           count: 0
+         }
+       },
+       computed : {
+         evenOrOdd () {
+           return (this as any).count % 2 === 0 ? '偶数' : '奇数';
+         }
+       },
+       methods: {
+         increment () {
+           (this as any).count++;
+         },
+         decrement () {
+           (this as any).count--;
+         },
+         incrementIfOdd () {
+           (this as any).count % 2 === 0 ? (this as any).count++ : '';
+         },
+         incrementAsync () {
+           setTimeout(() => {
+             (this as any).count++;
+           }, 1000);
+         },
+       },
+     }
+   </script>
+   ```
+
+### 2) 使用 vuex
+
+1. 安装 vuex4.0
+
+   可以在使用 vue-cli 创建项目时选择 vuex
+
+   1. 在项目的 package.json 文件的 dependencies 中添加一行 **"vuex": "^4.0.0"**
+   2. 切换到命令行, 使用 `npm i ` 安装相关依赖
+
+2. 规范
+
+   - 应用层级的状态应该集中到单个 store 对象中。
+   - 提交 **mutation** 是更改状态的唯一方法，并且这个过程是同步的。
+   - 异步逻辑都应该封装到 **action** 里面。
+
+   只要你遵守以上规则，如何组织代码随你便。如果你的 store 文件太大，只需将 action、mutation 和 getter 分割到单独的文件。
+
+   (大型项目结构示例)
+
+   ```
+   ├── index.html
+   ├── main.js
+   ├── api
+   │   └── ... # 抽取出API请求
+   ├── components
+   │   ├── App.vue
+   │   └── ...
+   └── store
+       ├── index.js          # 我们组装模块并导出 store 的地方
+       ├── actions.js        # 根级别的 action
+       ├── mutations.js      # 根级别的 mutation
+       └── modules
+       	├── ... 模块
+   ```
+
+3. 根据 **核心概念 & API** 中的第六项和第八项分别配置 `store/index.ts` 和 `main.ts`
+
+4. 由于是在 main.ts 中注册的 vuex，所以所有的组件都可以使用 `$store` 访问 Store 对象
+
+5. 修改 App.vue 和 store/index.ts
+
+   1. 将需要的 **data** 数据和 **computed** 计算属性数据保存为 Store 对象的 `state `和 `getters `属性
+
+      ```typescript
+      // 状态对象
+      const state = {
+        // 初始化出局
+        count: 0
+      
+      // 包含多个 getter 计算属性的对象
+      const getters = {
+        // 定义 getter 计算属性
+        evenOrOdd (state: {count: number}) {
+          return state.count % 2 === 0 ? '偶数' : '奇数'
+        }
+      };
+      ```
+
+   2. 在组件中通过 `$store.state/getters.xxx` 访问它们
+
+   3. 修改 **methods** 中的事件回调函数的具体逻辑为`使用 this.$store.dispatch()分发相应的 action`
+
+      ```typescript
+      export default {
+          methods: {
+              increment () {
+                  // 通过 $store.dispatch 分发 action
+                  (this as any).$store.dispatch('increment')
+              },
+              decrement () {
+                  // 通过 $store.dispatch 分发 action
+                  (this as any).$store.dispatch('decrement')
+              },
+              incrementIfOdd () {
+                  // 通过 $store.dispatch 分发 action
+                  (this as any).$store.dispatch('incrementIfOdd')
+              },
+              incrementAsync () {
+                  // 通过 $store.dispatch 分发 action
+                  (this as any).$store.dispatch('incrementAsync')
+              },
+          },
+      }
+      ```
+
+   4. 定义响应的 `action`，负责处理事件回调以及`调用 mutation 更新 state`
+
+      ```typescript
+      // 包含多个事件回调函数的对象 
+      const actions = {
+          // 定义事件回调函数 - action
+          increment ( { commit }: any ) {
+              // 调用对应的更新事件(回调函数)更新state
+              commit('addCount');
+          },
+          decrement ({ commit }: any) {
+              commit('reduceCount');
+          },
+          incrementIfOdd ( { commit , state }: any ) {
+              if(state.count % 2 === 0){
+                  // 如果符合条件判断就执行相应的更新函数
+                  commit('addCount');
+              }
+          },
+          incrementAsync ({ commit }: any) {
+              setTimeout(() => {
+                  commit('addCount');
+              }, 1000);
+          }
+      };
+      ```
+
+   5. 定义更新 `state` 的 `mutataion`
+
+      ```typescript
+      // 包含多个更新 state 回调函数的对象
+      const mutations = {
+        addCount ( state: {count: number} ) {
+          state.count++;
+        },
+        reduceCount ( state: {count: number} ) {
+          state.count--;
+        }
+      };
+      ```
+
+### 3) 使用 vuex(优化)
+
+> 使用 Vuex 的辅助函数 mapState、mapGetters、mapActions 简化代码
+
+```
+
+```
+
+
+
+## demo2: todo list
+
 # 第七章 Vue 源码分析
 
 # 第三章 Vue 3
