@@ -2064,8 +2064,6 @@
 
 1. 在父组件中定义的标签体，对应需要的数据(v-model,计算属性等)都在父组件中定义
 
-
-
 ## demo1: comment manage
 
 ### 1) 组件化开发流程
@@ -3277,14 +3275,6 @@
 
 ## 6.2 核心概念 & API
 
-**图示**
-
-![image-20210120132648633](README.assets/image-20210120132648633.png)
-
-1. Vuex 辅助管理 state、actions、mutations 三个部分
-2. Vue Components 依然依赖与 state 作为数据源
-3. Vue Components 依然通过 Actions 的方法更新 State；但 Actions **不会直接更新** State，而是通过 Mutations 间接更新
-
 ### 1) state
 
 1. vuex 管理的状态对象(Vm 对象中的 data)
@@ -3300,7 +3290,7 @@
 
    ```typescript
    const mutations = {
-   	byq(state,data){
+   	byq(state,{data}){
            //更新 state 的某个属性
        }
    }
@@ -3308,18 +3298,20 @@
 
 ### 3) actions
 
-1. 包含多个事件回调函数的对象
+1. 包含多个接收组件通信触发 mutation 调用间接更新 state 的方法的对象
 
 2. 通过 `commit(mutation 名称)` 调用指定的回调函数，简介更新 state
 
 3. 由 component 的 `$store.dispatch('action 名称')` 触发调用
 
+   如果传递的数据有多个，使用 {} 封装成对象即可
+
 4. 可以包含异步代码
 
    ```typescript
    const actions = {
-       bxdy ({commit,state},data1) {
-       	commit(data1,data2)
+       bxdy ({commit,state},{data1}) {
+       	commit(data1,{data1})
        }
    }
    ```
@@ -3350,13 +3342,45 @@ const getters = {};
 // 导入创建的 Store 对象
 export default createStore({
   state, // 状态对象
-  actions, // 包含多个更新 state 回调函数的对象
-  mutations, // 包含多个事件回调函数的对象
+  actions, // 包含多个接收组件通信触发 mutation 调用间接更新 state 的方法的对象
+  mutations, // 包含多个更新 state 回调函数的对象
   getters, // 包含多个 getter 计算属性的对象
 })
 ```
 
 ### 7) 组件中使用 
+
+1. 可以在组件中使用 vuex 的辅助函数 `mapState、mapGetters、mapActions` 
+
+2. ```typescript
+   /* 
+     导入 vuex 辅助函数
+       导入的 mapXxxx 函数都是返回一个对象，对象中具有指定的数据属性
+         - 如果不需要定义局部的属性，可以直接将其赋值给对应的属性
+         - 如果需要定义局部的属性，就需要使用 ...(对象/数组 展开运算符) 将对象的属性展开保存到当前对应的对象
+   */
+   import { mapState,mapGetters,mapActions } from 'vuex'
+   export default {
+       // 不要使用 data，因为不会得到数据，而是得到函数对象的字符串
+       // 需要定义局部的属性，使用 ... 将 map辅助函数的返回结果 => computed
+       computed : { 
+           // 当映射的属性名和 store 中定义的相同时，可以直接传入一个字符串数组
+           ...mapState(['count']),
+           // 当映射的属性名和 store 中定义的不同时，就需要传入一个对象
+           ...mapGetters({
+               // 映射的属性名: store 中定义的
+               evenOrOdd2: 'evenOrOdd'
+           },),
+           local () {
+               return '局部变量';
+           }
+       },
+       // 如果不需要定义局部的属性，直接将 map辅助函数的返回结果 => methods
+       methods: mapActions(['increment','decrement','incrementIfOdd',"incrementAsync"]),
+   }
+   ```
+
+   
 
 ### 8) 映射 store
 
@@ -3376,8 +3400,6 @@ createApp(App).use(store).mount('#app')
    - getters: 可以获取注册的 getters 对象
 3. 方法
    - dispatch(actionName,data)：分发调用 action
-
-## 6.3 结构分析
 
 ## demo1: 计数器
 
@@ -3564,15 +3586,57 @@ createApp(App).use(store).mount('#app')
 
 > 使用 Vuex 的辅助函数 mapState、mapGetters、mapActions 简化代码
 
+```typescript
+/* 
+  导入 vuex 辅助函数
+    导入的 mapXxxx 函数都是返回一个对象，对象中具有指定的数据属性
+      - 如果不需要定义局部的属性，可以直接将其赋值给对应的属性
+      - 如果需要定义局部的属性，就需要使用 ...(对象/数组 展开运算符) 将对象的属性展开保存到当前对应的对象
+*/
+import { mapState,mapGetters,mapActions } from 'vuex'
+export default {
+    // 不要使用 data，因为不会得到数据，而是得到函数对象的字符串
+    // 需要定义局部的属性，使用 ... 将 map辅助函数的返回结果 => computed
+    computed : { 
+        // 当映射的属性名和 store 中定义的相同时，可以直接传入一个字符串数组
+        ...mapState(['count']),
+        // 当映射的属性名和 store 中定义的不同时，就需要传入一个对象
+        ...mapGetters({
+            // 映射的属性名: store 中定义的
+            evenOrOdd2: 'evenOrOdd'
+        },),
+        local () {
+            return '局部变量';
+        }
+    },
+    // 如果不需要定义局部的属性，直接将 map辅助函数的返回结果 => methods
+    methods: mapActions(['increment','decrement','incrementIfOdd',"incrementAsync"]),
+}
 ```
 
-```
+**注意看注解**
+
+## 6.4 结构分析
+
+**官方图示**
+
+![image-20210120132648633](README.assets/image-20210120132648633.png)
+
+1. Vuex 辅助管理 state、actions、mutations 三个部分
+2. Vue Components 依然依赖与 state 作为数据源
+3. Vue Components 依然通过 Actions 的方法更新 State；但 Actions **不会直接更新** State，而是通过 Mutations 间接更新
+
+**完整版 - 学习后再看**
+
+![image-20210121091853719](README.assets/image-20210121091853719.png)
 
 
-
-## demo2: todo list
 
 # 第七章 Vue 源码分析
+
+> 基于 vue2.
+
+
 
 # 第三章 Vue 3
 
