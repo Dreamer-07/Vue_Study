@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>05_模板解析_一般指令</title>
+  <style>
+    .aclass {
+      color: red;
+    }
+    .byq {
+      font-size: 22px;
+    }
+    
+  </style>
+</head>
+<body>
+<div id="test">
+  <p v-text="msg"></p>
+  <p v-html="msg"></p>
+  <p v-class="myClass" class="byq">巴御前天下第一</p>
+</div>
+
+<script type="text/javascript" src="js/mvvm/compile.js"></script>
+<script type="text/javascript" src="js/mvvm/mvvm.js"></script>
+<script type="text/javascript" src="js/mvvm/observer.js"></script>
+<script type="text/javascript" src="js/mvvm/watcher.js"></script>
+<script type="text/javascript">
+  new MVVM({
+    el: '#test',
+    data: {
+      msg: '<a href="http://www.bilibili.com">哔哩哔哩动画</a>',
+      myClass: 'aclass'
+    }
+  })
+</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>02_数据代理_vue</title>
+</head>
+<body>
+
+<div id="test"></div>
+
+<script src="./js/vue.js"></script>
+<script>
+  const vm = new Vue({
+    el: "#test",
+    data: {
+      msg: "诶嘿嘿嘿"
+    }
+  })
+  // vm 对象代理了 data 对象属性的读取操作
+  console.log(vm.msg,vm); // 诶嘿嘿嘿 Vue 
+  // vm 对象代理了 data 对象属性的存取操作
+  vm.msg = "巴御前天下第一"
+  // 访问在内部的 data 对象 - 通过 _data 属性
+  console.log(vm._data.msg,vm.msg); // 巴御前天下第一 巴御前天下第一
+</script>
+</body>
+</html>

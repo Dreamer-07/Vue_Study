@@ -15,9 +15,9 @@
 
     渐进式：可以只使用基础的核心库，随着项目的需求再使用扩展的插件
 
-  - 作者：尤玉溪
+  - 作者：尤雨溪
 
-  - 作用：**动态构建用户界面**
+    作用：**动态构建用户界面**
 
     构建界面：将后台的数据可以在前台动态的渲染
 
@@ -3634,7 +3634,900 @@ export default {
 
 # 第七章 Vue 源码分析
 
-> 基于 vue2.
+## 7.1 说明
+
+1. 不是直接分析 vue 的源码
+2. 而是分析 vue 作为一个 mvvm 框架的基本实现原理
+   - 数据代理
+   - 模板解析
+   - 数据绑定
+3. 可以剖析某大佬在 github 上访 vue 实现的 mvvm 库：https://github.com/DMQ/mvvm
+
+## 7.2 准备知识
+
+1. Array.prototype.slice.call(arr)
+
+   - 作用：将伪数组转换为真数组
+
+   - 说明
+
+     1. slice([begin,end]): 返回一个新的数组对象，这一对象是一个由 begin 和 end 决定的原数组的**浅拷贝**（包括 begin，不包括end）。原始数组不会被改变。
+
+        **浅拷贝：只拷贝指针，不拷贝对象本身**
+
+     2. call(): 将一个函数作为指定对象的方法执行
+
+     3. **this 只能在函数执行时确定，而不是函数定义(箭头函数除外)**
+
+   - 代码
+
+     ```javascript
+     // 得到一个伪数组(具有下标和length属性)
+     const lis = document.getElementsByTagName('li'); 
+     console.log(lis instanceof Array,lis.filter); // false undefined
+     // ES6 中的语法
+     const lis2 = Array.from(lis);
+     console.log(lis2 instanceof Array,lis2.filter); // true function...
+     // ES5 的语法
+     const li3 = Array.prototype.slice.call(lis); 
+     console.log(li3 instanceof Array,li3.filter); // true function...
+     ```
+
+2. node.nodeType
+
+   - 作用：得到节点类型
+
+   - 说明
+
+     1. 最大的 node 节点类型：`document(HTML 文档对象)`
+     2. 常见的节点类型：`Element(元素)、Attr(属性)、Text(文本)`
+     3. 该属性得到的对应的节点类型的 **数字**
+
+        PS：在自己写代码的时候很少用上，写库的时候就要视情况使用
+
+   - ```javascript
+     // 元素节点
+     const elementNode = document.getElementById("test");
+     // 属性节点
+     const AttrNode = elementNode.getAttributeNode('id');
+     // 文本节点
+     const textNode = elementNode.firstChild;
+     console.log(elementNode.nodeType,AttrNode.nodeType,textNode.nodeType); //1 2 3
+     ```
+
+3. Object.defineProperty(obj,propertyName,{})
+
+   - 作用：给对象添加属性(指定描述符)
+
+   - 说明
+
+     1. 属性描述符：一个对象，可以让我们精确的添加/修改另一个对象的属性。
+
+        通常将该对象的属性分为两种类型：1.  数据描述符  2. 访问描述符
+
+        这两种类型所能定义的属性会有所不同
+
+     2. 可选属性
+
+        - `configurable`: 是否可以重新定义，默认值是 false
+        - `enumerable`: 是否可以枚举，默认值是 false
+        - `value`: 初始值，默认值是 undefined
+        - `writable`: 是否可以修改属性值，默认值时 false
+        - `get`: 回调函数，可以根据其他相关的属性动态计算得到当前属性的值
+        - `set`: 回调函数，监视当前的属性，可以更新其他相关的属性值
+
+     3. 数据描述符：
+
+        - 可以定义 `configurable、enumerable、value、writeable` 属性
+
+     4. 访问描述符：
+
+        - 可以定义 `configurable、enumerable、get、set` 属性
+
+        PS：由于该语法属于 ES5 的内容，不兼容 IE8 ，间接导致了 Vue 不兼容 IE8
+
+   - 代码
+
+     ```javascript
+     const obj = {
+         firstName: 'Stephen',
+         lastName: 'Curry'
+     }
+     // 定义一个 fullName 属性,实现和 firstName & lastName 的双向绑定
+     Object.defineProperty(obj , 'fullName' , {
+         // 定义属性描述符对象
+         // 访问描述符
+         get () {
+             return this.firstName + " " + this.lastName
+         },
+         set (newName) {
+             const names = newName.split(' ');
+             this.firstName = names[0];
+             this.lastName = names[1];
+         }
+     })
+     // --- 可以发现 fullName 并不会显示，因为其访问描述符 enumerable 为 false(不可被枚举)
+     console.log(obj); // {firstName: "Stephen", lastName: "Curry"}
+     obj.fullName = '巴 御前';
+     console.log(obj); // {firstName: "巴", lastName: "御前"}
+     
+     // --- Cannot redefine property fullName 不可以重新定义 fullName 属性，因为其数据描述符 configurable 为 false
+     // Object.defineProperty(obj , 'fullName' , { configurable: true })
+     ```
+
+4. Object.keys(obj)
+
+   - 作用：得到对象自身可枚举属性名组成的数组
+
+   - 代码
+
+     ```javascript
+     const keys = Object.keys(obj);
+     console.log(keys); // ["firstName", "lastName"]
+     ```
+
+5. obj.hasOwnProperty(propName)
+
+   - 作用：判断对应的 prop 是否是obj**自身**的属性
+
+   - 代码
+
+     ```javascript
+     console.log(obj.hasOwnProperty('fullName') , obj.hasOwnProperty('toString')); // true false
+     ```
+
+6. DocumentFragment
+
+   - 作用：文档碎片(高效批量更新多个节点)
+
+   - 说明：
+
+     1. 和 `document` 的区分
+        - `document`：对应整个显示的 HTML 页面，包含了 n 个 element 元素节点，一旦更新了其中的一个。就会再更新整个页面
+        - `documentFragment`：内存中保存了 n 个 element 元素节点的容器对象(不与界面相关联)，如果更新其中的某个元素节点，界面也不会更新
+     2. 使用
+        1. 创建一个 fragment 对象
+        2. 将需要操作的 element 保存到 fragment 中
+        3. 更新 fragment 鸿的 element
+        4. 将 fragment 插入到页面中
+
+   - 代码
+
+     ```javascript
+     // 6.1 创建一个 fragment 对象
+     const fragment = document.createDocumentFragment();
+     /* 6.2 将需要操作的 element 保存到 fragment 中 
+           - 由于一个子节点只能有一个父节点，所以当父节点改变时，子节点会不存在于原来的父节点中
+       */
+     const ul = document.getElementById('fragment_test');
+     let child;
+     // 得到 ul 的第一个子节点(标签元素，文本...)
+     while(child = ul.firstChild){
+         fragment.appendChild(child); //这里会将 child 添加到 fragment 中，并从 ul 节点中移除
+     }
+     // 6.3 更新 fragment 中的节点元素
+     // 如果需要使用 forEach() 遍历的话需要转换成真数组
+     Array.prototype.slice.call(fragment.childNodes).forEach(node => {
+         if(node.nodeType === 1){
+             node.innerHTML = '巴御前天下第一！！'
+         }
+     });
+     
+     // 6.4 将 fragment 插入到 ul 中
+     ul.appendChild(fragment);
+     ```
+
+     PS: 可以使用 `fragment.children` 代替· `fragment.childNodes`,前者该属性获取的是所有的子元素节点，而后者是获取所有的子节点
+
+## 7.3 数据代理
+
+### 1) 拓展：chrome debug 调试
+
+![image-20210125100122503](README.assets/image-20210125100122503.png)
+
+- **注意：**第五个按钮也会执行到下一条语句，但如果当前语句是**函数**就会进入到函数内部执行
+- 第六个按钮可以暂时使所有断点失效
+
+### 2) 说明
+
+1. 数据代理：通过一个对象代理完成对另一个对象的属性的读写操作
+2. vue 数据类型：通过 vm 对象来代理完成对 data 对象的所有属性操作
+3. 好处：更方便操作 data 数据
+4. 基本实现流程
+   1. 创建 vm 对象时，遍历 data 对象所有属性，通过 `Object.defineProperty()` 该 vm 对象添加与 data 对象同属性名的属性以及对应的属性描述符
+   2. 所有的属性描述符都会使用 **访问描述符(具有 get & set)**
+   3. 而 get 和 set 内部都是去访问 data 对象中的属性数据
+
+### 3) 测试代码
+
+```html
+<script type="text/javascript" src="js/mvvm/compile.js"></script>
+<script type="text/javascript" src="js/mvvm/mvvm.js"></script>
+<script type="text/javascript" src="js/mvvm/observer.js"></script>
+<script type="text/javascript" src="js/mvvm/watcher.js"></script>
+<script type="text/javascript">
+    const vm = new MVVM({
+        el: "#test",
+        data: {
+            msg: "诶嘿嘿嘿"
+        }
+    })
+    // vm 对象代理了 data 对象属性的读取操作
+    console.log(vm.msg,vm); // 诶嘿嘿嘿 Vue 
+    // vm 对象代理了 data 对象属性的存取操作
+    vm.msg = "巴御前天下第一"
+    // 访问在内部的 data 对象 - 通过 _data 属性
+    console.log(vm._data.msg,vm.msg); // 巴御前天下第一 巴御前天下第一
+</script>
+```
+
+### 4) 源码分析
+
+```javascript
+// 相当于 Vue 
+function MVVM(options) {
+  // 保存配置对象
+  this.$options = options;
+  // 初始化 vm 对象的 _data 属性为配置对象中的 data 对象
+  var data = this._data = this.$options.data;
+  // 保存 vm 对象
+  var me = this;
+  // 遍历 data 对象的所有可枚举的属性名
+  Object.keys(data).forEach(function (key) { // key == propName
+    // 为每一个属性(名)实现代理
+    me._proxy(key);
+  });
+  observe(data, this);
+  this.$compile = new Compile(options.el || document.body, this)
+}
+
+// 原型对象
+MVVM.prototype = {
+  $watch: function (key, cb, options) {
+    new Watcher(this, key, cb);
+  },
+  // 实现数据代理
+  _proxy: function (key) {
+    // 保存 vm 对象
+    var me = this;
+    // 使用 Object.defineProperty() 添加属性并指定 属性描述符
+    Object.defineProperty(me, key, {
+      // 访问描述符
+      configurable: false, // 不可修改
+      enumerable: true, // 可枚举
+      get: function proxyGetter() { // 访问属性时
+        // 读取data中一样对应属性值返回(实现代理读操作)
+        return me._data[key];
+      },
+      set: function proxySetter(newVal) { // 监视属性的更新
+        // 将最新的值保存到data中对应的属性上(实现代理写操作)
+        me._data[key] = newVal;
+      }
+    });
+  }
+};
+```
+
+## 7.4 模板解析
+
+### 1) 说明
+
+#### 模板解析的基本流程
+
+1. 将 el 的所有子节点取出，添加到一个新建的 fragment 对象中
+2. 将 fragment 中所有层次子节点递归进行编译解析处理
+   - 对元素节点的指令属性进行解析(事件指令解析/一般指令解析)
+   - 对表达式文本节点进行解析(大括号表达式)
+3. 将解析后的 fragment 添加到 el 中显示
+
+#### 大括号表达式解析
+
+> 运行的流程和 v-text 太大区别
+
+1. 根据正则对象匹配到对应的大括号表达式字符串，并通过 `RegExp.$1` 获取对应的子匹配的值
+2. 以子匹配的值为属性名获取 vm._data 中的属性值
+3. 将属性值替换成对应节点的 textContent 属性值
+
+#### 事件指令解析
+
+1. 从指令名中获取事件名(`on:xxx -> xxx`)
+
+2. 通过表达式(指令值)获取保存在 vm 的配置对象($options) 的 methods 中对应的函数
+
+3. 给当前节点绑定对应的 DOM 事件和回调函数
+
+   **注意：回调函数必须通过.bind(vm) 方法强制绑定 this 为 vm 对象**
+
+4. 绑定成功后，移除对应的 `attr` 属性节点
+
+#### 一般指令解析
+
+1. 得到指令名和表达式(指令值)
+2. 根据表达式得到在 data 中对应的值
+3. 根据指令名确定需要操作的 node 的属性
+   - text - textContent
+   - html - innerHTML
+   - class - className
+4. 将表达式得到的值赋值在 node 对应的属性上
+5. 移除对应的 `attr` 属性节点
+
+### 2) 测试代码
+
+#### 大括号表达式
+
+```html
+<div id="test">
+    <p>{{}}</p>
+</div>
+...
+<script type="text/javascript">
+    new MVVM({
+        el: '#test',
+        data: {
+            name: 'to mo e go zen'
+        }
+    })
+</script>
+```
+
+#### 事件指令
+
+```html
+<div id="test">
+    <button v-on:click="byq">测试</button>
+</div>
+...
+<script type="text/javascript">
+    new MVVM({
+        el: '#test',
+        data: {
+            msg: '巴御前天下第一'
+        },
+        methods: {
+            byq () {
+                alert(this.msg)
+            }
+        }
+    })
+</script>
+```
+
+#### 一般指令
+
+```html
+<div id="test">
+    <p v-text="msg"></p>
+    <p v-html="msg"></p>
+    <p v-class="myClass" class="byq">巴御前天下第一</p>
+</div>
+
+<script type="text/javascript" src="js/mvvm/compile.js"></script>
+<script type="text/javascript" src="js/mvvm/mvvm.js"></script>
+<script type="text/javascript" src="js/mvvm/observer.js"></script>
+<script type="text/javascript" src="js/mvvm/watcher.js"></script>
+<script type="text/javascript">
+    new MVVM({
+        el: '#test',
+        data: {
+            msg: '<a href="http://www.bilibili.com">哔哩哔哩动画</a>',
+            myClass: 'aclass'
+        }
+    })
+</script>
+```
+
+### 3) 源码解析
+
+#### 大括号表达式
+
+```javascript
+/* 编译对象构造函数 */
+function Compile(el, vm) {
+    // 保存 vm 对象
+    this.$vm = vm;
+    /* 
+        将 el 对应的元素对象保存
+            - isElementNode()：是否为元素节点
+            - 如果 el 是元素就保存，如果不是再通过 document.querySelector 查找对应元素节点
+        */
+    this.$el = this.isElementNode(el) ? el : document.querySelector(el);
+
+    // 如果对应的元素节点($el)存在
+    if (this.$el) {
+        // 将 el 元素中的所有子节点保存的 fragment 中(2 is to)
+        this.$fragment = this.node2Fragment(this.$el);
+        // 初始化：编译 fragment 中所有层次子节点
+        this.init();
+        // 将编译后的 fragment 添加到页面的 el 元素中
+        this.$el.appendChild(this.$fragment);
+    }
+}
+
+Compile.prototype = {
+    constructor: Compile,
+    node2Fragment: function(el) {
+        var fragment = document.createDocumentFragment(),
+            child;
+
+        // 将原生(子)节点拷贝到fragment
+        while (child = el.firstChild) {
+            fragment.appendChild(child);
+        }
+
+        // 返回
+        return fragment;
+    },
+
+    init: function() {
+        // 编译 this.$fragment 中所有层次的节点
+        this.compileElement(this.$fragment);
+    },
+
+    compileElement: function(el) {
+        // 获取 el 对象的所有子节点(这里的 el 是 fragment)
+        var childNodes = el.childNodes,
+            // 保存当前对象(complie 实例对象)
+            me = this;
+        // 遍历所有的子节点
+        [].slice.call(childNodes).forEach(function(node) {
+            // 获取当前节点的 textContent(获取当前节点及其所有后代文本内容)
+            var text = node.textContent;
+            /* 
+                创建正则对象：匹配 {{xxx}}
+                    - 通过 () 可以进行'子匹配'，可以额外匹配内部的值
+                */
+            var reg = /\{\{(.*)\}\}/;
+            // 是否为元素节点
+            if (me.isElementNode(node)) {
+                // 编译元素节点 - 解析元素上的 Attr(指令)
+                me.compile(node);
+                // 是否为 文本节点 && 符合正则规则({{xxx}})
+            } else if (me.isTextNode(node) && reg.test(text)) {
+                /* 
+                    编译大括号表达式文本节点
+                        - 可以通过 RegExp 访问 $num 属性获取子匹配的数据
+                    */
+                me.compileText(node, RegExp.$1.trim());
+            }
+            // 判断当前节点是否有子节点，如果有就执行 递归调用
+            if (node.childNodes && node.childNodes.length) {
+                me.compileElement(node);
+            }
+        });
+    },
+   	...
+    compileText: function(node, exp) {
+        // {{}} 本质上和 v-text 指令没有区别，这里通过 编译工具(CompileUtil) 解析
+        compileUtil.text(node, this.$vm, exp);
+    },
+   	...
+    // 是否为元素节点
+    isElementNode: function(node) {
+        // 通过 nodeType 属性判断
+        return node.nodeType == 1;
+    },
+
+    isTextNode: function(node) {
+        return node.nodeType == 3;
+    }
+};
+
+// 包含多个解析指令的方法的对象：以指令名作为对应的 key(属性名)
+var compileUtil = {
+
+    text: function(node, vm, exp) {
+        this.bind(node, vm, exp, 'text');
+    },
+
+    html: function(node, vm, exp) {
+        this.bind(node, vm, exp, 'html');
+    },
+    ...
+    /**
+         * 绑定数据
+         * @param {*} node 节点
+         * @param {*} vm vm 对象
+         * @param {*} exp 数据
+         * @param {*} dir 指令名
+         */
+    bind: function(node, vm, exp, dir) {
+        // 获取对应的指令的修改器(函数)
+        var updaterFn = updater[dir + 'Updater'];
+
+        // 如果存在就执行对应的修改器(函数) - 传入对应的 node 节点和数据(通过 _getVMVal(获取))
+        updaterFn && updaterFn(node, this._getVMVal(vm, exp));
+
+        new Watcher(vm, exp, function(value, oldValue) {
+            updaterFn && updaterFn(node, value, oldValue);
+        });
+    },
+
+    // 从 vm 中得到表达式所对应的值
+    _getVMVal: function(vm, exp) {
+        // 保存 vm
+        var val = vm;
+        // 切割数据(这里是大括号表达式)，也就是可能存在嵌套调用 a.b.c
+        exp = exp.split('.');
+        // 遍历
+        exp.forEach(function(k) {
+            /* 
+                第一次会从 vm 中获取数据，并替换 vm 保存
+                如果有第二个，就会继续遍历，然后从第一个数据中获取对应的属性值
+                以此循环
+                */
+            val = val[k];
+        });
+        // 返回 val
+        return val;
+    },
+    ...
+};
+
+// 包含多个更新节点的方法的工具对象
+var updater = {
+    // 更新节点的 textContent 属性值
+    textUpdater: function(node, value) {
+        // 如果数据的类型不为 undefined 就替换当前节点的 textContent 属性
+        node.textContent = typeof value == 'undefined' ? '' : value;
+    },
+
+    // 更新节点的 innetHTML 属性值
+    htmlUpdater: function(node, value) {
+        node.innerHTML = typeof value == 'undefined' ? '' : value;
+    },
+
+    // 更新节点的 className 属性值
+    classUpdater: function(node, value, oldValue) {
+        var className = node.className;
+        className = className.replace(oldValue, '').replace(/\s$/, '');
+
+        var space = className && String(value) ? ' ' : '';
+
+        node.className = className + space + value;
+    },
+
+    // 更新节点的 value 属性值
+    modelUpdater: function(node, value, oldValue) {
+        node.value = typeof value == 'undefined' ? '' : value;
+    }
+};
+```
+
+#### 事件指令
+
+```javascript
+/* 编译对象构造函数 */
+function Compile(el, vm) {
+    // 保存 vm 对象
+    this.$vm = vm;
+    /* 
+    将 el 对应的元素对象保存
+        - isElementNode()：是否为元素节点
+        - 如果 el 是元素就保存，如果不是再通过 document.querySelector 查找对应元素节点
+    */
+    this.$el = this.isElementNode(el) ? el : document.querySelector(el);
+
+    // 如果对应的元素节点($el)存在
+    if (this.$el) {
+        // 将 el 元素中的所有子节点保存的 fragment 中(2 is to)
+        this.$fragment = this.node2Fragment(this.$el);
+        // 初始化：编译 fragment 中所有层次子节点
+        this.init();
+        // 将编译后的 fragment 添加到页面的 el 元素中
+        this.$el.appendChild(this.$fragment);
+    }
+}
+
+Compile.prototype = {
+    ....
+
+    init: function() {
+        // 编译 this.$fragment 中所有层次的节点
+        this.compileElement(this.$fragment);
+    },
+
+    compileElement: function(el) {
+        // 获取 el 对象的所有子节点(这里的 el 是 fragment)
+        var childNodes = el.childNodes,
+        // 保存当前对象(complie 实例对象)
+            me = this;
+        // 遍历所有的子节点
+        [].slice.call(childNodes).forEach(function(node) {
+            // 获取当前节点的 textContent(获取当前节点及其所有后代文本内容)
+            var text = node.textContent;
+            /* 
+            创建正则对象：匹配 {{xxx}}
+                - 通过 () 可以进行'子匹配'，可以额外匹配内部的值
+            */
+            var reg = /\{\{(.*)\}\}/;
+            // 是否为元素节点
+            if (me.isElementNode(node)) {
+                // 编译元素节点 - 解析元素上的 Attr(指令)
+                me.compile(node);
+            } 
+            ...
+            // 判断当前节点是否有子节点，如果有就执行 递归调用
+            if (node.childNodes && node.childNodes.length) {
+                me.compileElement(node);
+            }
+        });
+    },
+
+    // 编译对应的元素节点(解析指令)
+    compile: function(node) {
+        // 获取所有的属性节点
+        var nodeAttrs = node.attributes,
+        // 保存 this
+            me = this;
+
+        // 遍历所有的属性节点
+        [].slice.call(nodeAttrs).forEach(function(attr) {
+            // 获取属性名
+            var attrName = attr.name;
+            // 判断是否是指令属性
+            if (me.isDirective(attrName)) {
+                // 获取对应的属性值 - 表达式
+                var exp = attr.value;
+                /* 
+                获取指令名(v-on:xxx -> on:xxx)
+                    - substring(index[,end]): 从第 index 开始截取到 end(不包含)
+                */
+                var dir = attrName.substring(2);
+                // 判断是否为事件指令
+                if (me.isEventDirective(dir)) {
+                    // 通过编译工具进行事件处理
+                    compileUtil.eventHandler(node, me.$vm, exp, dir);
+                    // 普通指令
+                } else {
+                    compileUtil[dir] && compileUtil[dir](node, me.$vm, exp);
+                }
+
+                // 删除对应的指令属性
+                node.removeAttribute(attrName);
+            }
+        });
+    },
+
+    ....
+
+    // 是否是指令属性 - 是否以 v- 开头
+    isDirective: function(attr) {
+        return attr.indexOf('v-') == 0;
+    },
+
+    // 是否是事件指令 - 是否以 on 开头
+    isEventDirective: function(dir) {
+        return dir.indexOf('on') === 0;
+    },
+
+    // 是否为元素节点
+    isElementNode: function(node) {
+        // 通过 nodeType 属性判断
+        return node.nodeType == 1;
+    },
+    ...
+};
+
+// 包含多个解析指令的方法的对象：以指令名作为对应的 key(属性名)
+var compileUtil = {
+    
+    ...
+
+    // 事件处理
+    eventHandler: function(node, vm, exp, dir) {
+        // 获取指令名中的 事件名(on:xxx -> xxx)
+        var eventType = dir.split(':')[1],
+            // 通过表达式获取 vm 配置对象的 methods 对象中保存的函数
+            fn = vm.$options.methods && vm.$options.methods[exp];
+
+        // 如果事件名和对应的函数都存在
+        if (eventType && fn) {
+            // 为节点绑定上指定的 DOM事件回调函数(其中回调函数的 this 被强制绑定为 vm)
+            node.addEventListener(eventType, fn.bind(vm), false);
+        }
+    },
+
+    ...
+};
+
+...
+```
+
+#### 一般指令
+
+```javascript
+/* 编译对象构造函数 */
+function Compile(el, vm) {
+    ...
+    if (this.$el) {
+        // 将 el 元素中的所有子节点保存的 fragment 中(2 is to)
+        this.$fragment = this.node2Fragment(this.$el);
+        // 初始化：编译 fragment 中所有层次子节点
+        this.init();
+        // 将编译后的 fragment 添加到页面的 el 元素中
+        this.$el.appendChild(this.$fragment);
+    }
+}
+
+Compile.prototype = {
+    ...
+
+    init: function() {
+        // 编译 this.$fragment 中所有层次的节点
+        this.compileElement(this.$fragment);
+    },
+
+    compileElement: function(el) {
+        // 获取 el 对象的所有子节点(这里的 el 是 fragment)
+        var childNodes = el.childNodes,
+        // 保存当前对象(complie 实例对象)
+            me = this;
+        // 遍历所有的子节点
+        [].slice.call(childNodes).forEach(function(node) {
+            // 获取当前节点的 textContent(获取当前节点及其所有后代文本内容)
+            var text = node.textContent;
+            /* 
+            创建正则对象：匹配 {{xxx}}
+                - 通过 () 可以进行'子匹配'，可以额外匹配内部的值
+            */
+            var reg = /\{\{(.*)\}\}/;
+            // 是否为元素节点
+            if (me.isElementNode(node)) {
+                // 编译元素节点 - 解析元素上的 Attr(指令)
+                me.compile(node);
+            // 是否为 文本节点 && 符合正则规则({{xxx}})
+            }
+            ...
+            // 判断当前节点是否有子节点，如果有就执行 递归调用
+            if (node.childNodes && node.childNodes.length) {
+                me.compileElement(node);
+            }
+        });
+    },
+
+    // 编译对应的元素节点(解析指令)
+    compile: function(node) {
+        // 获取所有的属性节点
+        var nodeAttrs = node.attributes,
+        // 保存 this
+            me = this;
+
+        // 遍历所有的属性节点
+        [].slice.call(nodeAttrs).forEach(function(attr) {
+            // 获取属性名
+            var attrName = attr.name;
+            // 判断是否是指令属性
+            if (me.isDirective(attrName)) {
+                // 获取对应的属性值 - 表达式
+                var exp = attr.value;
+                /* 
+                获取指令名(v-on:xxx -> on:xxx)
+                    - substring(index[,end]): 从第 index 开始截取到 end(不包含)
+                */
+                var dir = attrName.substring(2);
+                // 判断是否为事件指令
+                if (me.isEventDirective(dir)) {
+                    ...
+                    // 普通指令
+                } else {
+                    // 判断编译工具中是否有对应的处理函数，如果有就执行
+                    compileUtil[dir] && compileUtil[dir](node, me.$vm, exp);
+                }
+
+                // 删除对应的指令属性
+                node.removeAttribute(attrName);
+            }
+        });
+    },
+
+    compileText: function(node, exp) {
+        // {{}} 本质上和 v-text 指令没有区别，这里通过 编译工具(CompileUtil) 解析
+        compileUtil.text(node, this.$vm, exp);
+    },
+
+    // 是否是指令属性 - 是否以 v- 开头
+    isDirective: function(attr) {
+        return attr.indexOf('v-') == 0;
+    },
+
+    // 是否是事件指令 - 是否以 on 开头
+    isEventDirective: function(dir) {
+        return dir.indexOf('on') === 0;
+    },
+
+    // 是否为元素节点
+    isElementNode: function(node) {
+        // 通过 nodeType 属性判断
+        return node.nodeType == 1;
+    },
+
+    ...
+};
+
+// 包含多个解析指令的方法的对象：以指令名作为对应的 key(属性名)
+var compileUtil = {
+    // 处理 v-text/{{}} 
+    text: function(node, vm, exp) {
+        this.bind(node, vm, exp, 'text');
+    },
+    // 处理 v-html
+    html: function(node, vm, exp) {
+        this.bind(node, vm, exp, 'html');
+    },
+
+   	...
+    // 处理 v-class
+    class: function(node, vm, exp) {
+        this.bind(node, vm, exp, 'class');
+    },
+
+    /**
+     * 绑定数据
+     * @param {*} node 节点
+     * @param {*} vm vm 对象
+     * @param {*} exp 数据
+     * @param {*} dir 指令名
+     */
+    bind: function(node, vm, exp, dir) {
+        // 获取对应的指令的修改器(函数)
+        var updaterFn = updater[dir + 'Updater'];
+
+        // 如果存在就执行对应的修改器(函数) - 传入对应的 node 节点和数据(通过 _getVMVal(获取))
+        updaterFn && updaterFn(node, this._getVMVal(vm, exp));
+
+        new Watcher(vm, exp, function(value, oldValue) {
+            updaterFn && updaterFn(node, value, oldValue);
+        });
+    },
+
+    ...
+
+    // 从 vm 中得到表达式所对应的值
+    _getVMVal: function(vm, exp) {
+        // 保存 vm
+        var val = vm;
+        // 切割数据(这里是大括号表达式)，也就是可能存在嵌套调用 a.b.c
+        exp = exp.split('.');
+        // 遍历
+        exp.forEach(function(k) {
+            /* 
+            第一次会从 vm 中获取数据，并替换 vm 保存
+            如果有第二个，就会继续遍历，然后从第一个数据中获取对应的属性值
+            以此循环
+            */
+            val = val[k];
+        });
+        // 返回 val
+        return val;
+    },
+
+    ...
+};
+
+// 包含多个更新节点的方法的工具对象
+var updater = {
+    // 更新节点的 textContent 属性值
+    textUpdater: function(node, value) {
+        // 如果数据的类型不为 undefined 就替换当前节点的 textContent 属性
+        node.textContent = typeof value == 'undefined' ? '' : value;
+    },
+
+    // 更新节点的 innetHTML 属性值
+    htmlUpdater: function(node, value) {
+        node.innerHTML = typeof value == 'undefined' ? '' : value;
+    },
+
+    // 更新节点的 className 属性值
+    classUpdater: function(node, value, oldValue) {
+        // 获取 node 的静态 class 类名
+        var className = node.className;
+        // 将静态的 class 和动态的 class 拼接再一次后赋值给 className 属性
+        node.className = className + (className ? ' ' : '') + value;
+    },
+
+    ...
+};
+```
 
 
 
