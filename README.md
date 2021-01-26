@@ -3634,6 +3634,8 @@ export default {
 
 # 第七章 Vue 源码分析
 
+> 基于 Vue2.x
+
 ## 7.1 说明
 
 1. 不是直接分析 vue 的源码
@@ -4529,9 +4531,401 @@ var updater = {
 };
 ```
 
+## 7.5 数据绑定
 
+- 一旦更新了 data 中的某个属性数据，所有界面上直接(大括号表达式等)和间接(计算属性)使用了此属性的节点都会**自动更新**
 
-# 第三章 Vue 3
+### 1) 数据劫持
+
+- 数据劫持是 vue **实现**数据绑定的一种技术
+
+- 基本思想：通过 `definePropty()` 来监视 data 中的(所有层次)属性的变化，一旦发生变化就去更新界面
+
+- 源码解析 - 在创建 MVVM 对象时就会实施数据劫持
+
+  ```javascript
+  // mvvm.js
+  // 相当于 Vue 
+  function MVVM(options) {
+    // 保存配置对象
+    this.$options = options;
+    // 初始化 vm 对象的 _data 属性为配置对象中的 data 对象
+    var data = this._data = this.$options.data;
+    // 保存 vm 对象
+    var me = this;
+    // 遍历 data 对象的所有可枚举的属性名
+    Object.keys(data).forEach(function (key) { // key == propName
+      // 为每一个属性(名)实现代理
+      me._proxy(key);
+    });
+    // 实施数据劫持
+    observe(data, this);
+    // 创建编译对象，传入 配置对象中的 el 属性(如果没有就传入 document.body) 和 当前对象(vm)
+    this.$compile = new Compile(options.el || document.body, this)
+  }
+  ...
+  
+  // observe.js
+  function Observer(data) {
+      // 为实例对象保存 data
+      this.data = data;
+      // 开始
+      this.walk(data);
+  }
+  
+  Observer.prototype = {
+      constructor: Observer,
+      walk: function(data) {
+          var me = this;
+          // 遍历所有属性(名)
+          Object.keys(data).forEach(function(key) {
+              // 为对应的属性进行 convert(转换)
+              me.convert(key, data[key]);
+          });
+      },
+      convert: function(key, val) {
+          // Reactive - 响应式属性：当属性发生变化时，更新界面上对应的元素节点
+          this.defineReactive(this.data, key, val);
+      },
+  
+      defineReactive: function(data, key, val) {  
+          var dep = new Dep();
+          // 间接递归调用：对于嵌套的属性(如对象)，还需要对其属性完成数据劫持
+          var childObj = observe(val);
+          // 实施数据劫持 - 设置一个 set 方法监视该属性的变化
+          Object.defineProperty(data, key, {
+              enumerable: true, // 可枚举
+              configurable: false, // 不能再define
+              get: function() {
+                  if (Dep.target) {
+                      dep.depend();
+                  }
+                  return val;
+              },
+              set: function(newVal) {
+                  if (newVal === val) {
+                      return;
+                  }
+                  val = newVal;
+                  // 新的值是object的话，进行监听
+                  childObj = observe(newVal);
+                  // 通知订阅者
+                  dep.notify();
+              }
+          });
+      }
+  };
+  
+  function observe(value, vm) {
+      // 如果值为 undefined 或者类型不为 object 就直接返回
+      if (!value || typeof value !== 'object') {
+          return;
+      }
+      // 创建一个 Observer(观察者)
+      return new Observer(value);
+  };
+  ```
+  
+PS：这里的 Dep 下面会说，这里只要知道 **在创建 MVVM 对象时就会实施数据劫持**
+
+### 2) Dep - Dependency
+
+### 说明
+
+1. Dep 实例的创建：在初始化时为 data 属性实施 **数据劫持** 时创建
+
+2. Dep 实例的个数与 data 中的属性个数相同(所有层次)
+
+3. Dep 实例的结构
+
+   ```javascript
+   function Dep() {
+       this.id = uid++; // 标识
+       this.subs = []; // 相关的 watcher 容器
+   }
+   ```
+
+### 3) Watcher 
+
+#### 说明
+
+1. Watcher 实例的创建：
+
+   在初始化进行模板解析时，如果是**一般指令/大括号表达式**，vue 还会为其准备一个 **Watcher(监视者)**
+
+   ```javascript
+   /**
+   * 绑定数据
+   * @param {*} node 节点
+   * @param {*} vm vm 对象
+   * @param {*} exp 数据
+   * @param {*} dir 指令名
+   */
+   bind: function(node, vm, exp, dir) {
+       // 初始化显示
+       // 获取对应的指令的修改器(函数)
+       var updaterFn = updater[dir + 'Updater'];
+   
+       // 如果存在就执行对应的修改器(函数) - 传入对应的 node 节点和数据(通过 _getVMVal(获取))
+       updaterFn && updaterFn(node, this._getVMVal(vm, exp));
+   
+       /*
+       更新显示：
+       	这里会为表达式添加一个 Watcher(监听者)，实现节点的更新显示
+       		(回调函数应该关注的三个点：this是谁，什么时候调用，用来做什么)
+       		- 在对应的表达式的值发生变化时，就会调用指定的回调函数
+       		- 该回调函数的作用就是更新对应的元素节点的属性
+       */
+       new Watcher(vm, exp, function(value, oldValue) {
+           updaterFn && updaterFn(node, value, oldValue);
+       });
+   },
+   ```
+
+2. Watcher 实例的个数：与使用的表达式(不包含事件指令)个数相同
+
+3. Watcher 实例的结构
+
+   ```javascript
+   function Watcher(vm, expOrFn, cb) {
+       this.cb = cb; // 回调函数
+       this.vm = vm; // vm 对象
+       this.expOrFn = expOrFn; // 表达式 OR 函数
+       this.depIds = {}; // 包含了 n 个相关 dep 的容器对象
+   
+       if (typeof expOrFn === 'function') {
+           this.getter = expOrFn;
+       } else {
+           this.getter = this.parseGetter(expOrFn.trim());
+       }
+   
+       this.value = this.get(); // 当前表达式的值
+   }
+   ```
+
+### 4) Dep 和 Watcher 的关系
+
+- 更新 data 数据的流程
+
+  ```
+  vm.name='xxx' ->(数据劫持) 调用 name 属性值的 set() -> 调用对应的 dep.notify() 通知所有订阅者(subs) ->
+  watcher 调用 updaterFn() 回调函数 -> 更新界面
+  ```
+
+- Dep 和 Watcher 之间的关系：**多对多**
+
+  - name  -> dep -> n 个 watcher(当name对应的表达式被多次使用时: {{name}},v-text="name"...)
+
+    **将 watcher 添加到 dep 中是为了用于更新**
+
+  - exp(表达式) -> watcher -> n 个 dep(当 exp 是多个表达式对应多个属性时: 'a.b.c' )
+
+    **将 dep 添加到 watcher 中是否了防止重复建立关系**
+
+- Dep 和 Watcher 关系的确认时间：**在为表达式创建 watcher 时**
+
+  1. 实施数据劫持的时间早于编译指令的，所以当 vue 为表达式配置 watcher 时，也就是 `new Watcher()` 时，由于其需要保存当前表达式的值，所以需要获取表达式对应的值
+
+  2. 在 watcher 初始化保存表达式时，会设置对应的处理函数
+
+     ```javascript
+     function Watcher(vm, expOrFn, cb) {
+         this.expOrFn = expOrFn; // 表达式 OR 函数
+         ...
+     
+         // 判断表达式是否是函数
+         if (typeof expOrFn === 'function') {
+             this.getter = expOrFn;
+         } else {
+             // 如果不是函数就获取对应表达式的 getter 方法
+             this.getter = this.parseGetter(expOrFn.trim());
+         }
+     
+         this.value = this.get(); // 获取表达式的值
+     }
+     ...
+     parseGetter: function(exp) {
+         if (/[^\w.$]/.test(exp)) return; 
+     
+         var exps = exp.split('.');
+     
+         return function(obj) {
+             ...
+         }
+     }
+     ```
+
+  3. 当通过 `watcher.get()` 获取表达式的值是，就会调用相应的处理函数
+
+     ```javascript
+     get: function() {
+         // 设置 Dep 全局属性 target 为当前的 watcher
+         Dep.target = this;
+         // 通过该表达式的 getter() 获取其在 vm 中保存的 data 数据值
+         var value = this.getter.call(this.vm, this.vm);
+         // 设置回 null
+         Dep.target = null;
+         return value;
+     }
+     ```
+
+     这里会设置 Dep 全局属性 target 为当前的 watcher
+
+  4. 当我们通过处理函数访问对应的表达式的值时，会触发对应属性值的 get() 函数
+
+     ```javascript
+     parseGetter: function(exp) {
+         if (/[^\w.$]/.test(exp)) return; 
+     
+         // 分隔表达式为数组
+         var exps = exp.split('.');
+     
+         return function(obj) {
+             for (var i = 0, len = exps.length; i < len; i++) {
+                 if (!obj) return;
+                 /* 
+                 从对象中获取该表达式对应的值
+                 	{
+                     	exps - 表达式：可能是嵌套表达式
+                         obj - 传入的对象
+                     }
+                     这里的 obj 是 vm 对象，从其中获取属性值的会触发相应的 get() 方法
+                     由于实施数据劫持早于编译指令，所以会调用对应的 data 属性的 get() 方法 - 查看 observe.js.32
+                     */
+                 obj = obj[exps[i]];
+             }
+             return obj;
+         }
+     }
+     ```
+
+  5. 来找 **observer.js.32** 可以看到对应的 get() 函数
+
+     ```javascript
+     get: function() {
+         // 当前 Dep(对应一个属性)的 target(操作目标) 存在的话(watcher)
+         if (Dep.target) {
+             // 建立 Dep 和 Dep.target(watcher) 的依赖
+             dep.depend();
+         }
+         return val;
+     }
+     ```
+
+     如果是通过 watcher 访问时，其 `Dep.target` 都会设置对应的 watcher 对象
+
+  6. 通过 `dep.depend()` 建立 Dep 和 Watcher 的依赖
+
+     ```javascript
+     depend: function() {
+         // 建立 watcher 和 当前dep 的依赖 - watcher.js.31
+         Dep.target.addDep(this);
+     }
+     ```
+
+  7. 回到 **watcher.js.31** 可以看到对应的 addDep() 函数
+
+     ```javascript
+     addDep: function(dep) {
+             /* 
+             判断是否建立过依赖
+                 - watcher.depIds: 与当前 watcher 相关的 dep 的容器对象
+             */
+             if (!this.depIds.hasOwnProperty(dep.id)) {
+                 // 为 dep 添加 watcher - 用于更新
+                 dep.addSub(this);
+                 // 为 watcher 添加 dep - 用于防止重复建立关系
+                 this.depIds[dep.id] = dep;
+             }
+         }
+     ```
+
+- 确立关系后 - 更新 data 数据自动更新界面
+
+  1. 当重新设置 data 中的属性时都会触发相应的 set() 函数
+
+     ```javascript
+     set: function(newVal) {
+         if (newVal === val) {
+             return;
+         }
+         val = newVal;
+         // 新的值是object的话，进行监听
+         childObj = observe(newVal);
+         // 通知所有相关的订阅者(watchers)
+         dep.notify();
+     }
+     ```
+
+  2. 该函数会通过 `dep.notify()` 通知所有**订阅**的 watcher
+
+     ```javascript
+     notify: function() {
+         this.subs.forEach(function(sub) {
+             sub.update();
+         });
+     }
+     ```
+
+  3. 而 watcher 就会调用对应的回调函数 `updaterXXX()`
+
+     ```javascript
+     update: function() {
+         this.run();
+     },
+     run: function() {
+         var value = this.get(); // 获取当前表达式的值
+         var oldVal = this.value; // 获取旧的值
+         if (value !== oldVal) {
+             this.value = value;
+             // 调用保存的回调函数，this 指定为 vm 对象
+             this.cb.call(this.vm, value, oldVal);
+         }
+     },
+     ```
+
+## 7.6 MVVM 结构图
+
+![image-20210126164123012](README.assets/image-20210126164123012.png)
+
+## 7.7 双向数据绑定
+
+- 双向数据绑定是建立在单向数据绑定(model -> view)的基础之上的
+
+- 基本实现流程
+
+  1. 在解析 v-model 指令时，添加对应的 DOM 监听事件(如 input)
+  2. 当触发对应的回调函数时，更新对应的 data 属性值
+  3. 触发 set() 函数，通知 dep -> 通知所有相关的 watcher 更新视图
+
+- ```javascript
+  model: function(node, vm, exp) {
+      // 用于初始化显示和创建对应的 watcher
+      this.bind(node, vm, exp, 'model');
+  
+      // 保存当前对象(complie 实例)
+      var me = this,
+          // 获取当前表达式对应的值 
+          val = this._getVMVal(vm, exp);
+      // 为节点绑定 DOM 事件监听
+      node.addEventListener('input', function(e) {
+          // 获取新的值
+          var newValue = e.target.value;
+          // 如果值没有改变就返回
+          if (val === newValue) {
+              return;
+          }
+          // 更新 data 中对应表达式的值(会被劫持，触发 set() 函数)
+          me._setVMVal(vm, exp, newValue);
+          // 保存新的值
+          val = newValue;
+      });
+  }
+  ```
+
+  
+
+# 第八章 Vue 3
 
 ## 3.1 基本介绍
 

@@ -11,6 +11,7 @@ function MVVM(options) {
     // 为每一个属性(名)实现代理
     me._proxy(key);
   });
+  // 实施数据劫持
   observe(data, this);
   // 创建编译对象，传入 配置对象中的 el 属性(如果没有就传入 document.body) 和 当前对象(vm)
   this.$compile = new Compile(options.el || document.body, this)

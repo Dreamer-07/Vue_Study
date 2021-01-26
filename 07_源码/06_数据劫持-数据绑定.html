@@ -14,21 +14,9 @@
 <div id="test">
   <p>{{name}}</p>
   <p v-text="name"></p>
-  <p v-text="wife.name"></p>
+  <p v-text="per.age"></p>
   <button v-on:click="update">更新</button>
 </div>
-
-<!--
-dep
-  与data中的属性一一对应  (4)
-watcher
-  与模板中一般指令/大括号表达式一一对应 (3)
-
-1. 什么时候一个dep中关联多个watcher?
-  多个指令或表达式用到了当前同一个属性  {{name}} {{name}}
-2. 什么时候一个watcher中关联多个dep?
-  多层表达式的watcher对应多个dep    {{a.b.c}}
--->
 
 
 <script type="text/javascript" src="js/mvvm/compile.js"></script>
@@ -39,15 +27,15 @@ watcher
   new MVVM({
     el: '#test',
     data: {
-      name: 'sadamu',  // dep0
-      wife: { // dep1
-        name: 'binbin', // dep2
-        age: 18 // dep3
+      name: '诶嘿嘿嘿',
+      per: {
+        age: 17
       }
     },
     methods: {
       update () {
-        this.name = 'avatar'
+        this.name = 'OHHHH',
+        this.per.age = 18
       }
     }
   })

@@ -147,17 +147,24 @@ var compileUtil = {
     },
 
     model: function(node, vm, exp) {
+        // 用于初始化显示和创建对应的 watcher
         this.bind(node, vm, exp, 'model');
 
+        // 保存当前对象(complie 实例)
         var me = this,
+            // 获取当前表达式对应的值 
             val = this._getVMVal(vm, exp);
+        // 为节点绑定 DOM 事件监听
         node.addEventListener('input', function(e) {
+            // 获取新的值
             var newValue = e.target.value;
+            // 如果值没有改变就返回
             if (val === newValue) {
                 return;
             }
-
+            // 更新 data 中对应表达式的值(会被劫持，触发 set() 函数)
             me._setVMVal(vm, exp, newValue);
+            // 保存新的值
             val = newValue;
         });
     },
@@ -174,12 +181,20 @@ var compileUtil = {
      * @param {*} dir 指令名
      */
     bind: function(node, vm, exp, dir) {
+        // 初始化显示
         // 获取对应的指令的修改器(函数)
         var updaterFn = updater[dir + 'Updater'];
 
         // 如果存在就执行对应的修改器(函数) - 传入对应的 node 节点和数据(通过 _getVMVal(获取))
         updaterFn && updaterFn(node, this._getVMVal(vm, exp));
 
+        /*
+        更新数据时：
+            这里会先为表达式添加一个 Watcher(监听者)
+                (回调函数应该关注的三个点：this是谁，什么时候调用，用来做什么)
+                - 在对应的表达式的值发生变化时，就会调用指定的回调函数
+                - 该回调函数的作用就是更新对应的元素节点的属性
+        */
         new Watcher(vm, exp, function(value, oldValue) {
             updaterFn && updaterFn(node, value, oldValue);
         });
@@ -218,6 +233,7 @@ var compileUtil = {
         return val;
     },
 
+    // 更新表达式对应的 data 的值
     _setVMVal: function(vm, exp, value) {
         var val = vm;
         exp = exp.split('.');
