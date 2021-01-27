@@ -1,4 +1,4 @@
-# vue3_study
+# vue_cil
 
 ## Project setup
 ```

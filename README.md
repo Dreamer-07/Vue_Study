@@ -1088,16 +1088,16 @@
 - vue 对象的生命周期
 
   1. 初始化显示阶段
-     - beforeCreate()
-     - created()
-     - beforeMount()
-     - **mounted()**
+     - beforeCreate()：组件实例还未被创建，组件属性还未定义
+     - created()：组件实例创建完成，属性已经绑定，但 DOM 还未生成，`$el` 属性不存在
+     - beforeMount()：编译/挂载模板之前
+     - **mounted()**：编译/挂载模板之后
   2. 更新阶段
-     - beforeUpdate()
-     - updated()
+     - beforeUpdate()：组件更新之前
+     - updated()：组件更新之后
   3. 销毁 vue 实例: vm.**$destroy()**
-     - **beforeDestroy()**
-     - destroyed()
+     - **beforeDestroy()**：组件销毁前使用
+     - destroyed()：组件销毁后使用
   4. 常用的生命周期方法
      - created() /  mounted()：主要负责发送 Ajax 请求，启动定时器等异步任务
      - beforeDestroy()：死亡之前执行，负责做收尾工作，比如清除定时器
@@ -4626,6 +4626,7 @@ var updater = {
   };
   ```
   
+
 PS：这里的 Dep 下面会说，这里只要知道 **在创建 MVVM 对象时就会实施数据劫持**
 
 ### 2) Dep - Dependency
@@ -4927,7 +4928,9 @@ PS：这里的 Dep 下面会说，这里只要知道 **在创建 MVVM 对象时�
 
 # 第八章 Vue 3
 
-## 3.1 基本介绍
+## 3.1 准备工作
+
+### 1) 基本介绍
 
 **相关信息**
 
@@ -4959,9 +4962,9 @@ PS：这里的 Dep 下面会说，这里只要知道 **在创建 MVVM 对象时�
   - 将原来的全局 API 转移到应用对象
   - 模板语法的变化
 
-## 3.2 创建 Vue3 项目
+### 2) 创建 Vue3 项目
 
-### 1) 使用 vue-cli 创建
+#### 使用 vue-cli 创建
 
 1. 下载 vue-cli : **npm install -g @vue/cli**
 
@@ -4991,7 +4994,7 @@ PS：这里的 Dep 下面会说，这里只要知道 **在创建 MVVM 对象时�
 
    ![image-20201228162224682](README.assets/image-20201228162224682.png)
 
-### 2) 使用 vite 创建
+#### 使用 vite 创建
 
 **说明**
 
@@ -5015,5 +5018,466 @@ PS：这里的 Dep 下面会说，这里只要知道 **在创建 MVVM 对象时�
 
   ![image-20201228162710409](README.assets/image-20201228162710409.png)
 
+## 3.2 Composition API(常用部分)
+
+> vue3 官方中文文档：[Vue3](https://v3.cn.vuejs.org/guide/migration/introduction.html)
+
+### 1) setup
+
+- 新的 `option`,所有的组件 API 函数都在此使用，只在初始化时执行一次
+- 函数如果返回对象，对象中的方法、属性，模板中都可以直接使用
+
+### 2) ref
+
+- 作用：定义一个**基本类型**的响应式数据(数据变化，视图更新)
+
+- 语法：`const xxx = ref(初始值)`
+
+  - 创建一个包含响应式数据的 Ref(reference) 对象
+  - 在 TS/JS 中如果需要操作对应的数据，需要通过 `.value` 属性进行访问
+  - 在模板中直接访问对应的 Ref 对象即可
+  - 记得先从 vue 中引入哟
+
+- 代码(和 setup 一起使用)
+
+  ```vue
+  <template>
+    <h2>setup 和 ref 的使用 - 实现点击按钮修改数据</h2>
+    <p>{{count}}</p>
+    <button @click="updater">增加 count</button>
+  </template>
   
+  
+  <script lang="ts">
+  import { defineComponent, ref } from 'vue';
+  export default defineComponent({
+    // 组件名
+    name: 'App',
+    // vue2 中的写法
+    // data () {
+    //   return {
+    //     count: 0
+    //   }
+    // },
+    // methods: {
+    //   updater () {
+    //     this.count++
+    //   }
+    // }
+  
+    // vue3 的写法
+    // 定义 setup() 函数，该函数是组合 API 的入口函数
+    setup() {
+      // let count = 0; // 普通的变量
+  
+      /* 
+      使用 ref() 函数设置响应式数据：
+        - ref() 函数可以定义一个响应式数据，返回一个 Ref 的对象，该对象中有一个 value 属性
+          TS/JS 可以通过该属性访问数据
+        - 但 html 模板中可以不访问 value，直接访问 Ref 对象即可
+        - 通常用来定义一个 "基本类型" 的响应式数据
+      */
+      const count = ref(0)
+      function updater () {
+        // 如果不设置响应式数据，那么及时数据修改了，视图也不会更新
+        console.log(count);
+        count.value++;
+      }
+      // 如果返回一个对象，那么模板中可以直接访问其中的属性/方法
+      return {
+        count,
+        updater
+      }
+    }
+  });
+  </script>
+  ```
+
+### 3) reactive
+
+- 作用：定义响应式的引用数据
+
+- 语法：`const proxyObj = reactive(obj)` 接收一个引用类型的数据后返回一个响应式代理对象
+
+  返回的对应是一个 `Proxy` 类型的代理对象，而被代理的对象就是传入的引用数据
+
+- 特点
+
+  1. 响应式的转换是 **深层的**，会影响对象内部所有嵌套的属性
+  2. 无论是否有代理对象，直接操作源对象的属性，是不会触发视图更新的
+
+- **内部是基于 ES6 的 Proxy 实现的，通过代理对象操作源对象内部数据都是响应式的**
+
+- 代码
+
+  ```vue
+  <template>
+  <h2>reactive 的基本使用 - 展示用户数据，点击按钮更新</h2>
+  <p>{{user.name}}</p>
+  <p>{{user.age}}</p>
+  <p>{{user.identity}}</p>
+  <button @click="updater">更新数据</button>
+  </template>
+  
+  
+  <script lang="ts">
+      import { defineComponent, reactive } from 'vue';
+      export default defineComponent({
+          setup() {
+              const obj = {
+                  name: '诶嘿嘿',
+                  age: 17,
+                  identity: {
+                      name: '阿梓喵',
+                      id: '100 144 302 921',
+                      servants: ['T','J','H']
+                  }
+              };
+              /* 
+              reactive() 函数的作用：定义响应式的引用数据
+                - 通过 reactive() 函数传入一个引用对象，可以得到该引用对象的响应式代理对象
+                - 响应式转换是 '深层的'，会影响原对象内部所有嵌套的属性
+                - 返回的是一个 Proxy 的代理对象，而被代理的对象就是传入的对象
+              */
+              const user = reactive(obj);
+  
+              const updater = () => {
+                  // obj.identity.name = "哇嘎嘎嘎" // 即使有代理对象，直接修改原对象也是不能更新界面的
+                  user.name += '嘿嘿嘿'
+                  user.age++;
+                  // 通过代理对象以下标的形式操作深度的数组属性
+        			user.identity.servants[0] = 'C'
+                  console.log(user); // Proxy 
+              };
+  
+              return {
+                  user,
+                  updater
+              }
+          }
+      });
+  </script>
+  ```
+
+## 4) ★ vue2 和 vue3 的响应式区别
+
+#### vue2 的响应式
+
+- 核心
+  1. 对象：通过 `defineProperty` 对 data 中的所有属性进行**数据劫持**
+  2. 数组：通过重写数组的一些更新元素的方法来完成对元素的劫持
+- 问题
+  1. 对象直接添加的新属性/删除已有属性，界面不会自动更新
+  2. 直接通过下标操作元素/更新 length,界面不会自动更新
+
+#### vue3 的响应式
+
+- 核心
+
+  - 通过 [Proxy](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy) 代理，拦截对 data 任意属性的任意操作(13种：增删改查等)
+  - 通过 [Reflect](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Reflect)(反射)：动态对被代理对象的相应属性进行特定的操作
+
+- 简述
+
+  - Proxy 用于创建一个对象(target)的代理对象,同时定义对应的处理器对象(handler)用来监视数据和其相关操作
+- 处理器对象中包含指定的函数用来处理代理对象的操作(增删改查等)
+  
+  - 函数体中通过 `Reflect` 的静态方法访问/操作源对象中的属性
+  
+- 代码
+
+  ```javascript
+  // 定义一个源对象
+  const obj = {
+      name: '秋山澪',
+      info: '贝斯手',
+      wife: [
+          {
+              name: '田井中律',
+              info: '鼓手'
+          }
+      ]
+  };
+  /* 
+  定义一个代理对象: new Proxy(target,handler)
+  	- target: 源对象
+      - handler: 处理器对象，当进行某些操作时触发对应的处理器
+  */
+  const qysn = new Proxy(obj,{
+      // 当需要读取目标对象中的某个属性时
+      get(target,prop) {
+          console.log('get方法执行了');
+          // 通过 Reflect 对象操作 target 对象
+          return Reflect.get(target,prop)
+      },
+      // 监视目标对象的属性(更新/修改)
+      set(target,prop,val) {
+          console.log('set方法执行了');
+          return Reflect.set(target,prop,val)
+      },
+      // 删除目标对象的属性
+      deleteProperty(target,prop) {
+          console.log('deleteProperty方法执行了');
+          return Reflect.deleteProperty(target,prop)
+      } 
+  })
+  // 通过代理对象得到源对象的属性
+  console.log(qysn.name); // 秋山澪
+  // 通过代理对象修改源对象的属性
+  qysn.wife.info = '厉害的鼓手'
+  // 通过代理对象添加源对象的属性
+  qysn.guitar = {
+      name: '呆唯',
+      info: '吉他手'
+  }
+  console.log(qysn);
+  // 通过代理对象删除源对象的属性
+  delete qysn.guitar.info
+  console.log(qysn);
+  ```
+
+## 5) setup 细节
+
+#### 拓展: VSC 用户片段
+
+1. 选中用户片段
+
+   ![image-20210127154854789](README.assets/image-20210127154854789.png)
+
+2. 选择
+
+   ![image-20210127155336940](README.assets/image-20210127155336940.png)
+
+3. 添加以下片段
+
+   ```json
+   "Print to console": {
+       "prefix": "vv3", // 快捷键
+       "body": [ // 对应的代码块
+           "<template>",
+           "\t<div>",
+           "\t<div>",
+           "</template>\n",
+   
+           "<script lang=\"ts\">",
+           "\timport { defineComponent } from 'vue'",
+           "\texport default defineComponent({",
+           "\t\tname: 'App'",
+           "\t})",
+           "</script>"
+       ],
+       "description": "Log output to console"
+   }
+   ```
+
+4. 在 vue 中使用对应的快捷键即可
+
+#### setup 执行的时机
+
+- 在 `beforeCreate()` 生命钩子函数之前执行(且只执行一次)
+
+- 对应的**组件实例还未被创建**(this is undefined),所以不能通过 this 去访问 data/computed/methods/props 等属性
+
+- 其实所有的 `composition API` 相关的回调函数也都不可能访问 this
+
+- 代码
+
+  ```vue
+  <template>
+      <h2>Child</h2>
+      <p>msg: {{msg}}</p>
+  </template>
+  
+  <script lang="ts">
+      import { defineComponent } from 'vue'
+      export default defineComponent({
+          name: 'Child',
+          props: ['msg'],
+          // beforeCrate() 生命钩子函数，该函数在创建组件实例前执行
+          beforeCreate() {
+              console.log('beforeCreate()方法调用了');
+          },
+          /* 
+          setup 执行的时机：在 beforeCreate() 生命周期钩子函数之前执行了(且执行只执行一次)
+              - 代表连对应的组件实例都未创建，this is undefined
+              - 所以不可以通过 this 去访问 data/computed/props/methods 属性
+          */
+          setup() {
+              console.log('setup()方法调用了',this); // undefined
+              return {}
+          }
+      })
+  </script>
+  ```
+
+#### setup 的返回值
+
+- `setup()` 函数的返回值一般是一个对象，该对象中的属性和方法都可以直接在模板中使用
+
+- 该对象中的属性会和 `data` 中的属性合并成为 vm 实例对象的属性
+
+- 该对象中的方法会和 `methods` 中的函数合并成为 vm 实例对象的方法
+
+  ![image-20210127164603031](README.assets/image-20210127164603031.png)
+
+- 注意：
+
+  1. 不推荐 data/methods 和 setup 混合使用; data/methods 中可以访问 setup 中的数据，但反之不行(setup的执行时机！)
+  2. 如果出现键重复的情况(属性名/方法名重复), setup 的优先，且会导致 data/methods 中对应的属性/方法报错
+  3. setup 不能是一个 async 修饰的函数，会导致返回的对象为 Promise 类型的，html 模板无法直接解析获取数据
+
+- 代码
+
+  ```vue
+  <template>
+      <h2>Child</h2>
+      <p>msg: {{msg}}</p>
+      <p>title: {{title}}</p>
+  </template>
+  
+  <script lang="ts">
+      import { defineComponent } from 'vue'
+      export default defineComponent({
+          name: 'Child',
+          props: ['msg'],
+          setup() {
+              const showMsg = () => {
+                  console.log('setup 中的 showMsg 函数执行了');
+  
+              }
+              /* 
+              setup 的返回值
+                  一般 setup() 函数的返回值都是一个对象，html 模板可以直接访问其中的属性和方法
+                      - 返回对象的属性会和 data 函数的返回值对象合并成为 vm 实例对象的属性
+                      - 返回对象的方法会话 methods 中的函数合并成为 vm 实例对象的方法
+                      - 注意：
+                          1. 如果有重名的情况，setup() 优先(会导致 methods/data 报错：Duplicated key 'xxx')
+                          2. 不建议混合使用 data/methods + setup
+                          3. setup 不能是一个 async 修饰的函数，不然其的返回会变成 Promise 导致模板无法获取其中的数据
+              */
+              return {
+                  showMsg
+              }
+          },
+          data() {
+              return {
+                  title: 'OHHHH',
+                  // msg: '诶嘿嘿' // Duplicated key 'msg'
+              }
+          },
+          methods: {
+              // 会导致键重复报错
+              // showMsg() {
+              //     console.log('methods 中的 showMsg() 函数执行了'); 
+              // }
+              showMsg2() {
+                  console.log('methods 中的 showMsg2() 函数执行了');
+              }
+          },
+          mounted() {
+              console.log(this); //[[Target]].msg && [[Target]].title
+              this.showMsg();
+          }
+      })
+  </script>
+  ```
+
+#### setup 参数
+
+- 可以接受 `(props,context)` 作为 setup 函数的参数(明确需要的属性后也可以使用解构赋值)
+
+- props：包含了配置的 props 数组中从父组件中获取的数据的对象
+
+- context：包含了 `attrs,props,emit,expose,slots` 属性的对象
+
+  1. attrs：包含了子组件标签上的所有属性，通过 `.属性名` 即可访问(即使没有在 props 中配置)
+  2. props：和第一个参数一样
+  3. emit：负责调用分发事件的函数
+  4. expose：不知道
+  5. slots：插槽
+
+- 代码
+
+  ```vue
+//---------- 父组件
+  <template>
+    ...
+  
+      <Child :msg="msg" msg2="巴御前！" @byq="byq"/>
+  </template>
+  
+  <script lang="ts">
+      import { defineComponent, ref } from 'vue'
+      import Child from './components/Child.vue'
+      export default defineComponent({
+          name: 'App',
+          setup() {
+              const msg = ref('巴御前天下第一');
+              const byq = (text: string) => {
+                  console.log(text);
+              }
+              return {
+                  msg,
+                  byq
+              }
+          },
+          // 注册子组件
+          components: {
+              Child
+          }
+      })
+  </script>
+  
+  // 子组件
+  <template>
+      <h2>Child</h2>
+      <p>msg: {{msg}}</p>
+      <button @click="showByq">触发 byq 函数</button>
+  </template>
+  
+  <script lang="ts">
+      import { defineComponent } from 'vue'
+      export default defineComponent({
+          name: 'Child',
+          props: ['msg'],
+          setup(props,context) {
+  
+              /* 
+              setup 的参数: props & context
+                  - props: 包含了配置的 props 数组中从父组件中获取的数据的对象
+                  - context：包含了 attrs、emit、expose、props、slots 的属性的对象
+                      1. attrs: 获取当前子组件标签上的所有属性(包括 props 中没有配置获取的)
+                      2. emit: 赋值调用分发事件的函数
+                      3. expose: 不知道
+                      4. props: 和第一个参数 props 相同
+                      5. slots: 插槽
+              */
+              console.log("--------setup 参数");
+              console.log(props,context);
+              console.log(props.msg , context.attrs.msg2);	
+              console.log(context.expose);
+              
+              const showByq = () => {
+                  context.emit('byq','通过 emit 调用分发事件')
+              }
+  
+              return {
+                  showMsg,
+                  showByq
+              }
+          },
+          ...
+      })
+  </script>
+  ```
+  
+    
+  
+  
+
+
+
+
+
+
 
