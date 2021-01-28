@@ -4928,7 +4928,7 @@ PS：这里的 Dep 下面会说，这里只要知道 **在创建 MVVM 对象时�
 
 # 第八章 Vue 3
 
-## 3.1 准备工作
+## 8.1 准备工作
 
 ### 1) 基本介绍
 
@@ -5018,7 +5018,7 @@ PS：这里的 Dep 下面会说，这里只要知道 **在创建 MVVM 对象时�
 
   ![image-20201228162710409](README.assets/image-20201228162710409.png)
 
-## 3.2 Composition API(常用部分)
+## 8.2 Composition API(常用部分)
 
 > vue3 官方中文文档：[Vue3](https://v3.cn.vuejs.org/guide/migration/introduction.html)
 
@@ -5159,7 +5159,7 @@ PS：这里的 Dep 下面会说，这里只要知道 **在创建 MVVM 对象时�
   </script>
   ```
 
-## 4) ★ vue2 和 vue3 的响应式区别
+### 4) ★ vue2 和 vue3 的响应式区别
 
 #### vue2 的响应式
 
@@ -5236,7 +5236,7 @@ PS：这里的 Dep 下面会说，这里只要知道 **在创建 MVVM 对象时�
   console.log(qysn);
   ```
 
-## 5) setup 细节
+### 5) setup 细节
 
 #### 拓展: VSC 用户片段
 
@@ -5470,14 +5470,718 @@ PS：这里的 Dep 下面会说，这里只要知道 **在创建 MVVM 对象时�
       })
   </script>
   ```
+
+### 6) ref 和 reactive 的细节问题
+
+**说明**
+
+1. Vue3 的 composition Api 中的两个响应式 Api(ref & reactive)
+
+2. ref 用来数据基本数据类型，reactive 用来处理引用数据类型
+
+3. 但 ref 也可以用来处理引用数据，
+
+​       内部会自动使用 reactive 将 value 属性转换为对应的代理对象
+
+4. ref 内部(基本数据类型)会给 value 属性添加对应的 get/set 进行数据劫持
+
+5. reactive 内部使用 Proxy 实现对对象内部数据的劫持，并通过 Reflect 操作源对象内部数据
+
+6. 即使 ref 内部的 value 是 Proxy ，在模板中也不需要通过 .value 访问，直接访问属性名即可
+
+**代码**
+
+```vue
+<template>
+<h2>ref 和 reactive 的细节问题</h2>
+<p>m1: {{m1}}</p>
+<p>m2: {{m2}}</p>
+<p>m3: {{m3}}</p>
+<p>m3.servant: {{m3.servant}}</p>
+<button @click="updater">更新</button>
+</template>
+
+<script lang="ts">
+    import { defineComponent, reactive, ref } from 'vue'
+    export default defineComponent({
+        name: 'App',
+        setup() {
+            /* 
+              总结：
+                1. Vue3 的 composition Api 中的两个响应式 Api(ref & reactive)
+                2. ref 用来数据基本数据类型，reactive 用来处理引用数据类型
+                3. 但 ref 也可以用来处理引用数据，
+                   内部会自动使用 reactive 将 value 属性转换为对应的代理对象
+                4. ref 内部(基本数据类型)会给 value 属性添加对应的 get/set 进行数据劫持
+                5. reactive 内部使用 Proxy 实现对对象内部数据的劫持，并通过 Reflect 操作源对象内部数据
+                6. 即使 ref 内部的 value 是 Proxy ，在模板中也不需要通过 .value 访问，直接访问属性名即可
+              */
+            // 通过 ref 创建基本数据类型的响应式数据
+            const m1 = ref('巴御前！');
+            // 通过 reactive 创建引用数据类型的响应式数据
+            const m2 = reactive({
+                name: 'test1',
+                servant: {
+                    info: 'saber'
+                }
+            });
+            // 通过 ref 创建引用数据类型的响应式数据
+            const m3 = ref({
+                name: 'test2',
+                servant: {
+                    info: 'Archer'
+                }
+            });
+            // 通过 reactive 无法创建基本数据类型的响应式数据
+            // const m4 = reactive('test3') // rgument of type 'string' is not assignable to parameter of type 'object'
+
+            const updater = () => {
+                m1.value += "!!";
+                m2.name = 'test2';
+                // 通过 ref 创建的引用数据的响应式数据访问时仍要加上 .value 
+                m3.value.servant.info = "Lancer";
+                // 内部仍会进行深度监视
+                console.log(m3.value,m3.value.servant); //Proxy{name: "test2",servant: {…}} Proxy{info: "Lancer"}
+            }
+
+            return {
+                m1,
+                m2,
+                m3,
+                updater
+            }
+        },
+        mounted() {
+            console.log(this);
+        }
+    })
+</script>
+```
+
+### 7) 计算属性与监视
+
+**计算属性: computed()**
+
+- 函数可以传入一个参数，用于对应计算属性的 get() 方法
+- 也可以传入一个对象，对象有对应计算属性的 get()/set() 方法
+- 函数的返回结果就是对应的计算属性
+
+**监视 watch()**
+
+- 第一个参数为要监视的属性，可以使用 `[]` 监视多个属性
+- 第二个参数为对应的回调函数
+- 第三个参数为该监视的配置(默认执行，深度监视)
+- 注意：**如果监视的属性不是响应式属性的话就要使用回调函数**
+
+**监视 watchEffect()**
+
+- 和 `watch()` 函数相识，都是监视一个/多个属性
+- 默认会执行一次，用于收集回调函数依赖的响应式属性
+- 当依赖的响应式属性发生改变时会调用对应的回调函数
+- 无法通过参数获取旧值/新值
+
+**代码**
+
+```vue
+<template>
+<h2>计算属性和监视</h2>
+<fieldset>
+    <legend>用户输入</legend>
+    姓氏：<input type="text" placeholder="请输入姓氏" v-model="user.firstName" /> <br />
+    名字：<input type="text" placeholder="请输入名字" v-model="user.lastName" /> <br />
+    </fieldset>
+<fieldset>
+    <legend>数据显示</legend>
+    计算属性get:      <input type="text" placeholder="计算属性get" v-model="fullName" /> <br />
+    计算属性get/set:  <input type="text" placeholder="计算属性get/set" v-model="fullName2"/> <br />
+    监视watch显示:    <input type="text" placeholder="监视watch显示" v-model="fullName3"/> <br />
+    </fieldset>
+</template>
+
+<script lang="ts">
+    import { computed, defineComponent, reactive, ref, watch, watchEffect } from 'vue'
+    export default defineComponent({
+        name: 'App',
+        setup() {
+            const user = reactive({
+                firstName: '巴',
+                lastName: '御前'
+            });
+            /* 
+      		computed() 函数的使用：返回一个计算属性
+        		- 如果只传入一个函数，代表对应计算属性的 get() 方法
+        		- 可以传入一个对象，对象中有对应的 get和set 方法
+      		*/
+            const fullName = computed(() => {
+                return user.firstName + " " + user.lastName
+            });
+            const fullName2 = computed({
+                get(){
+                    return user.firstName + " " + user.lastName
+                },
+                set(val: string){
+                    const names = val.split(" ");
+                    user.firstName = names[0];
+                    user.lastName = names[1];
+                }
+            });
+
+            /* 
+      		watch() 函数的使用：完成对指定数据的监视
+        		- 第一个参数为要监视的属性，可以使用 [] 监视多个属性
+        		- 第二个参数对应监视的回调函数
+        		- 第三个为监视的配置(深度监视，初始化调用一次等)
+        		注意：如果监视的不是响应式数据的话需要使用箭头函数
+      		*/
+            const fullName3 = ref('')
+            watch(user,({firstName,lastName}) => {
+                fullName3.value = firstName + " " + lastName
+            },{
+                deep: true, // 开启深度监视
+                immediate: true // 初始化调用一次监视函数
+            })
+            // 监视非响应式数据时 - 需要使用回调函数
+            watch([()=>user.firstName,()=>user.lastName],([firstName,lastName]) => {
+                console.log(firstName,lastName);
+            })
+
+            /* 
+      		watchEffect() 函数：完成对指定数据的监视
+        		- 默认会执行一次，用于收集依赖
+        		- 会自动收集依赖，只要回调函数中引用了响应式的属性
+        		  当这些属性发生变动时，回调就会执行的
+        		- 无法获取旧的值
+      		*/
+            watchEffect(()=>{
+                console.log('watcgEffect');
+                const names = fullName3.value.split(" ");
+                user.firstName = names[0];
+                user.lastName = names[1];
+            })
+            return {
+                user,
+                fullName,
+                fullName2,
+                fullName3
+            }
+        }
+    })
+</script>
+```
+
+### 8) 生命周期
+
+**vue2 与 vue3 生命周期图示对比**
+
+![image-20210128113033628](README.assets/image-20210128113033628.png)
+
+**vue2 的生命周期钩子函数对应的 vue3 组合式 API**
+
+- ~~beforeCreate~~ ->  `setup()` 
+- ~~created~~ ->  `setup()`
+- `beforeMount` -> `onBeforeMount`
+- `mounted` -> `onMounted`
+- `beforeUpdate` -> `onBeforeUpdate`
+- `updated` -> `onUpdated`
+- `beforeUnmount` -> `onBeforeUnmount`
+- `unmounted` -> `onUnmounted`
+- `errorCaptured` -> `onErrorCaptured` (不常用)
+- `renderTracked` -> `onRenderTracked` (测试 debug 用)
+- `renderTriggered` -> `onRenderTriggered` (不常用)
+
+**代码对比**
+
+App.vue
+
+```vue
+<template>
+    <h2>vue2 生命周期钩子函数和 vue3 的组合式 API 对比</h2>
+    <button @click="isShow = !isShow">挂载/卸载</button>
+    <hr />
+    <Child v-if="isShow"/>
+</template>
+
+<script lang="ts">
+    import { defineComponent, ref } from 'vue'
+    import Child from './components/Child.vue'
+    export default defineComponent({
+        name: 'App',
+        setup() {
+            const isShow = ref(true);
+            return {
+                isShow
+            }
+        },
+        components: {
+            Child
+        }
+    })
+</script>
+```
+
+Child.vue
+
+```vue
+<template>
+    <h2>Child</h2>
+    <span>{{msg}}</span> <br />
+    <button @click="msg=!msg">修改数据</button>
+</template>
+
+<script lang="ts">
+    import { defineComponent, onBeforeMount, onBeforeUnmount, onBeforeUpdate, onMounted, onUnmounted, onUpdated, ref } from 'vue'
+    export default defineComponent({
+        name: 'App',
+        // 使用 vue2 中的生命钩子函数
+        beforeCreate() {
+            console.log('vue2.x 中的 beforeCreate() 函数执行了');
+        },
+        created() {
+            console.log('vue2.x 中的 created() 函数执行了');
+        },
+        beforeMount() {
+            console.log('vue2.x 中的 beforeMount() 函数执行了');
+        },
+        mounted() {
+            console.log('vue2.x 中的 mounted() 函数执行了');
+        },
+        beforeUpdate() {
+            console.log('vue2.x 中的 beforeUpdate() 函数执行了');
+        },
+        updated() {
+            console.log('vue2.x 中的 updated() 函数执行了');
+        },
+        // 在 vue3 中使用了 beforeUnmount & unmount 代替了 beforeDestroy & destroy
+        beforeUnmount() {
+            console.log('vue2.x 中的 beforeUnmount() 函数执行了');
+        },
+        unmounted() {
+            console.log('vue2.x 中的 unmounted() 函数执行了');
+        },
+
+        setup() {
+            console.log('vue3.0 中的 setup() 函数执行了'); // 组合 API 中使用 setup 代替了 beforeCreate() & created()
+
+            const msg = ref(true)
+            // 通过 vue3 的 Composition API 访问生命周期的钩子函数
+            onBeforeMount(() => {
+                console.log('vue3.0 的 onBeforeMount() 函数执行了');
+            });
+            onMounted(() => {
+                console.log('vue3.0 的 onMounted() 函数执行了');
+            });
+            onBeforeUpdate(() => {
+                console.log('vue3.0 的 onBeforeUpdate() 函数执行了');
+            });
+            onUpdated(() => {
+                console.log('vue3.0 的 onUpdated() 函数执行了');
+            });
+            onBeforeUnmount(() => {
+                console.log('vue3.0 的 onBeforeUnmount() 函数执行了');
+            });
+            onUnmounted(() => {
+                console.log('vue3.0 的 onUnmounted() 函数执行了');
+            });
+            /* 
+            总结：可以发现 vue3.0 的组合 API 都会早于 vue2.x 中的生命钩子函数执行
+            */
+            return {
+                msg
+            }
+        }
+    })
+</script>
+```
+
+**总结：**
+
+1. vue3.0 中使用 `setup()` 替换了 beforeCreate() & created()
+2. vue3.0 的组合式 API 都早于对应的 vue2.x 中的生命周期钩子函数
+
+### 9) 自定义 hook 函数
+
+- 使用 vue3 的组合 API 封装的可复用功能函数，就是将需要重复使用的功能函数抽离出来
+
+- 自定义 hook 的作用类似于 vue2.x 中的 mixin 技术(混入)
+
+- 代码1：收集用户鼠标点击的页面位置
+
+  App.vue
+
+  ```vue
+  <template>
+      <h2>自定义 hook 函数操作</h2>
+      <p>
+          <span>x: {{x}}</span>
+          <span>y: {{y}}</span>
+      </p>
+  </template>
   
-    
+  <script lang="ts">
+      import { defineComponent } from 'vue'
+      import useMousePosition from './hooks/useMousePosition'
+      export default defineComponent({
+          name: 'App',
+          setup() {
+              const { x , y } = useMousePosition()
+              return {
+                  x,
+                  y
+              }
+          }
+      })
+  </script>
+  ```
+
+  hooks/useMousePosition.ts(hook 功能函数的文件通常以 use 开头)
+
+  ```typescript
+  import { onMounted, onUnmounted, ref } from 'vue'
+  export default function(){
+      const x = ref(-1);
+      const y = ref(-1);
+  
+      // 在挂载结束之后绑定 window 全局点击事件
+      const clickHandler = (event: MouseEvent) => {
+          x.value = event.pageX;
+          y.value = event.pageY;
+      };
+      onMounted(() => {
+          window.addEventListener('click',clickHandler)
+      });
+      // 在页面卸载之后删除 window 的 DOM 监听事件
+      onUnmounted(() => {
+          window.removeEventListener('click',clickHandler);
+      })
+      return {
+          x,
+          y
+      }
+  }
+  ```
+
+- 代码2:  发送 Ajax 请求获取数据
+
+  利用 TS 泛型强化类型检查
+
+  hooks/useRequest.ts
+
+  ```typescript
+  //2. 封装 Ajax 
+  import axios from 'axios'
+  import { ref } from 'vue'
+  // 指定泛型 T 用来确定请求成功后的数据类型
+  export default function<T>(url: string){
+      // 定义是否在请求中的标识位变量
+      const loading = ref(true);
+      // 定义请求成功后获取的数据 - <T | null> 约束该变量的数据类型为 T | (字面量)null
+      const data = ref<T | null>(null);
+      // 定义请求失败是的提示信息
+      const errorMsg = ref('');
+  
+      // 利用 axios 发送 Ajax 请求
+      axios.get(url).then(
+          (value) => {
+              loading.value = false;
+              data.value = value.data
+          },
+          (reason) => {
+              loading.value = false;
+              errorMsg.value = reason.message || '未知错误信息';
+          }
+      );
+  
+      // 返回请求的数据
+      return {
+          loading,
+          data,
+          errorMsg
+      }
+  }
+  ```
+
+  App.vue
+
+  ```vue
+  <template>
+      <h2>自定义 hook 函数操作</h2>
+      <h3>案例1：收集用户点击的页面坐标</h3>
+      <p>
+          <span>x: {{x}}</span>
+          <span>y: {{y}}</span>
+      </p>
+      <hr />
+      <h3>案例2: 发送 Ajax 请求获取数据</h3>
+      <p v-if="loading">正在加载中</p>
+  
+      <!-- 如果存在 length 属性就代表是数组 -->
+      <ul v-else-if="data.length" v-for="item in data" :key="item.id">
+          <h5>获取数组数据</h5>
+          <li>id: {{item.id}}</li>
+          <li>name: {{item.name}}</li>
+          <li>price: {{item.price}}</li>
+      </ul>
+  
+      <!-- 如果不存在就代表是对象 -->
+      <ul v-else-if="data">
+          <h5>获取对象数据</h5>
+          <li>id: {{data.id}}</li>
+          <li>city: {{data.city}}</li>
+          <li>distance: {{data.distance}}</li>
+      </ul>
+  
+      <p v-else>出错了！errorMsg: {{errorMsg}}</p>
+  </template>
+  
+  <script lang="ts">
+      // 1. 定义数据类型
+      interface Address {
+          id: string;
+          city: string;
+          distance: number;
+      }
+      interface Phone {
+          id: string;
+          name: string;
+          price: number;
+      }
+      import { defineComponent } from 'vue'
+      import useMousePosition from './hooks/useMousePosition'
+      // 引入对应的 hook 函数
+      import useRequest from './hooks/useRequest'
+      export default defineComponent({
+          name: 'App',
+          setup() {
+              const { x , y } = useMousePosition()
+              /* 
+        3. 在页面挂载结束时候发送请求获取数据
+          - 根据请求的数据类型不同，传入对应的类型即可
+        */
+              // const { loading, data, errorMsg } = useRequest<Address>('data/address.json');
+              const { loading, data, errorMsg } = useRequest<Phone[]>('data/phone.json');
+              return {
+                  x,
+                  y,
+                  loading,
+                  data,
+                  errorMsg
+              }
+          }
+      })
+  </script>
+  ```
+
+  **记得在 public 文件夹下创建对应的 data 文件夹和文件**
+
+### 10) toRefs
+
+- 可以将一个响应式对象转换成普通对象，该对象的每一个属性都会是一个响应式数据 ref
+
+- **应用**：在 hook 函数返回响应式对象(**reactive 对象取出的属性值都是非响应式的**)时，可以在不丢失响应式的情况下，使使用的组件可以直接进项分解使用
+
+- 代码
+
+  ```vue
+  <template>
+      <h2>toRefs() 函数的使用</h2>
+      <p>name: {{name}}</p>
+      <p>info: {{info}}</p>
+      <hr />
+      <p>name2: {{name2}}</p>
+      <p>info2: {{info2}}</p>
+  </template>
+  
+  <script lang="ts">
+  
+      import { defineComponent, onMounted, reactive, toRefs } from 'vue'
+  
+      /* 模拟一个 hook 函数 */
+      function useHook(){
+          const M3 = reactive({
+              name2: '巴御前',
+              info2: 'あいしている'
+          });
+          return {
+              title: '模拟 hook 函数',
+              // 如果希望返回的数据不丢失响应式，且容易被使用，建议使用 toRefs()
+              ...toRefs(M3)
+          }
+      }
+  
+      export default defineComponent({
+          name: 'App',
+          setup() {
+              const M = reactive({
+                  name: '巴御前',
+                  info: 'あいしている'
+              });
+  
+              /* 
+          使用 toRefs() 函数将一个响应式对象转换为普通对象，该普通对象的所有属性都是 ref 类型的响应式数据
+            - 主要作用于：当 hook 函数返回响应式对象时，可以在不丢失响应式的情况下将返回的对象进行分解使用
+            - TS 中访问普通对象的属性时，注意是 ref 类型的
+        */
+              const M2 = toRefs(M);
+              onMounted(() => {
+                  setInterval(() => {
+                      M.name += "!!!";
+                      console.log(M2); // {name: ObjectRefImpl, info: ObjectRefImpl} 
+                      // 由于属性的类型都是 ref，TS 中访问时需要使用 .value 
+                      M2.name.value += "!!!";
+                  },1000)
+              })
+  
+              // 使用模拟的 hook 函数,使用解构赋值获取需要的数据
+              const { name2 , info2 } = useHook()
+  
+              return {
+                  // M // 如果直接返回对象的话，模板中访问时还需要访问对象
+                  // ...M // 如果使用 ES6 中的 ...扩展运算符，由于 reactive 返回的响应式代理对象中的属性并非响应式数据，会导致无法进行视图更新
+                  ...M2,
+                  name2,
+                  info2
+              }
+          }
+      })
+  </script>
+  ```
+
+### 11) ref 获取元素
+
+- ref() 函数还有一个作用，就是获取组件中的标签元素
+
+- 代码
+
+  ```vue
+  <template>
+      <h2>ref() 函数获取页面标签元素</h2>
+      <!-- vue 的 html 模板中的标签可以通过定义 ref 属性快速定位 -->
+      <input type="text" ref="inputRef">
+  </template>
+  
+  <script lang="ts">
+      import { defineComponent, onMounted, ref } from 'vue'
+      export default defineComponent({
+          name: 'App',
+          setup() {
+              // setup 在页面挂载前执行，所以默认值设置为 null
+              const inputRef = ref<HTMLElement | null>(null); //  选择合适的数据类型能更助于开发效率
+              // 挂载结束后执行相应操作
+              onMounted(() => {
+                  inputRef.value && inputRef.value.focus(); //自动获取焦点
+              })
+              return {
+                  inputRef
+              }
+          }
+      })
+  </script>
+  ```
+
+## 8.3 Composition API(其他部分)
+
+### 1) shallowReactive & shallowRef
+
+- shallowReactive：只监视对象内最外层的数据，其他层的数据变化时不会触发视图更新
+
+- shallowRef：只有对应的 `.value` 属性发生改变时才会触发视图更新，就算调用时传入对象，内部也不会使用 `reactive` 进行处理
+
+- 使用
+
+  1. 一般情况下 `ref`  和 `reactive` 使用即可
+  2. 如果有一个对象数据，结构较深，且只更新最外层数据，建议使用 shallowReactive()
+  3. 如果有一个数据，后面会产生新的数据来替换(也就是基本数据类型才建议使用)，建议使用 shallowRef()
+
+- 代码
+
+  ```vue
+  <template></template>
+      <h2>shallowReactive & shallowRef 的使用</h2>
+      <p>{{m1}}</p>
+      <p>{{m2}}</p>
+      <p>{{m3}}</p>
+      <p>{{m4}}</p>
+      <button @click="updater">更新数据</button>
+  </template>
+  
+  <script lang="ts">
+      import { defineComponent, reactive, ref, shallowReactive, shallowRef } from 'vue'
+      export default defineComponent({
+          name: 'App',
+          setup() {
+  
+              const m1 = ref({
+                  name: 'ref',
+                  isDeep: true,
+                  info: {
+                      A: '嵌套对象属性'
+                  }
+              });
+  
+              const m2 = reactive({
+                  name: 'reactive',
+                  isDeep: true,
+                  info: {
+                      A: '嵌套对象属性'
+                  }
+              });
+  
+              const m3 = shallowRef({
+                  name: 'shallowRef',
+                  isDeep: false,
+                  info: {
+                      A: '嵌套对象属性'
+                  }
+              });
+  
+              const m4 = shallowReactive({
+                  name: 'shallowReactive',
+                  isDeep: false,
+                  info: {
+                      A: '嵌套对象属性'
+                  }
+              });
+  
+              const updater = () => {
+                  console.log(m1);
+                  // m1.value.name += "===";
+                  // m1.value.info.A += "===";
+  
+                  // console.log(m2);
+                  // m2.name += "===";
+                  // m2.info.A += "===";
+  
+                  console.log(m3); // 可以通过打印发现其 value 属性甚至不是一个 Proxy 对象
+                  // m3.value.name += "===";
+                  // m3.value.info.A += "===";
+                  // 对于 shallowRef() 创建的响应式数据，无论修改哪一层数据都不会发生视图更新，只有修改 .value 属性值才可以
+                  m3.value = {
+                      name: 'shallowRef',
+                      isDeep: false,
+                      info: {
+                          A: 'ともえちゃん可愛くなりたい'
+                      }
+                  }
   
   
+                  // console.log(m4);
+                  // m4.name += "===";
+                  // 对于 shallowReactive() 创建的响应式数据，不会进行深度监视(更新第一层之外的数据不会更新视图)
+                  // m4.info.A += "===";
+              }
+              return {
+                  m1,
+                  m2,
+                  m3,
+                  m4,
+                  updater
+              }
+          }
+      })
+  </script>
+  ```
 
-
-
-
+  
 
 
 
