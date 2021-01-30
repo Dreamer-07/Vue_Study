@@ -6835,3 +6835,149 @@ function isProxy (obj) {
 };
 ```
 
+## 8.5 其他新组合和 API
+
+### 1) 新组合
+
+#### Fragment(片段)
+
+- 在 Vue2 中，组件**必须**要有一个根标签
+- 在 Vue3 中，组件可以没有根标签，内部会将多个标签包含在一个 **Fragment** 虚拟元素
+- 好处：**减少标签层级、减小内存占用**
+
+#### Teleport(瞬移)
+
+- 提供了一种**干净**的方法，让指定的标签可以在父组件的指定标签下插入显示
+
+- 代码
+
+  App.vue
+
+  ```vue
+  <template>
+      <h2>Teleport 组件的使用</h2>
+      <hr />
+      <Child />
+  </template>
+  
+  <script lang="ts">
+      import { defineComponent } from 'vue'
+      import Child from './components/Child.vue'
+      export default defineComponent({
+          name: 'App',
+          components: {
+              Child
+          }
+      })
+  </script>
+  ```
+
+  Child.vue
+
+  ```vue
+  <template>
+      <h2>Child 子级组件</h2>
+      <button @click="isShow=true">显示对话框</button>
+      <hr />
+      <!-- 使用 Teleport 标签: to 属性指定要插入的指定标签 -->
+      <Teleport to='body' >
+          <div v-if="isShow" class="model">
+              <h4>This is 会话框 です</h4>
+              <button @click="isShow=false">关闭会话框</button>
+          </div>
+      </Teleport>
+  
+  </template>
+  
+  <script lang="ts">
+      import { defineComponent, ref } from 'vue'
+      export default defineComponent({
+          name: 'App',
+          setup() {
+              const isShow = ref(false)
+              return {
+                  isShow
+              }
+          }
+      })
+  </script>
+  
+  <style>
+      /* 样式仍可以·定义在原组件中 */
+      .model {
+          color: red;
+      }
+  </style>
+  ```
+
+#### Suspense(不确定的)
+
+- 允许我们的应用在等待异步组件时渲染一些后备内容，创建一个**平滑**的用户体验
+
+- 注意：如果 `setup()` 返回的是一个 Promise 对象，则对应的组件就是**异步组件**，这时就可以使用 Suspense
+
+- 代码
+
+  App.vue
+
+  ```vue
+  <template>
+      <h2>Suspense 标签的使用</h2>
+      <hr />
+      <!-- 对于异步组件，可以使用 Suspense 标签使其在加载的过程中显的更加平滑 -->
+      <Suspense>
+          <!-- 指定异步组件的插槽为 default -->
+          <template #default>
+              <Child />
+          </template>
+          <!-- 指定等待组件的插槽为 fallback -->
+          <template v-slot:fallback>
+              <h2>loading....</h2>
+          </template>
+      </Suspense>
+  </template>
+  
+  <script lang="ts">
+      import { defineComponent } from 'vue'
+      import Child from './components/Child.vue'
+      export default defineComponent({
+          name: 'App',
+          components: {
+              Child
+          }
+      })
+  </script>
+  ```
+
+  Child.vue
+
+  ```vue
+  <template>
+      <h2>Child 异步组件</h2>
+      <p>msg: {{msg}}</p>
+  </template>
+  
+  <script lang="ts">
+      import { defineComponent } from 'vue'
+      import axios from 'axios'
+      export default defineComponent({
+          name: 'Child',
+          /* 
+          通过 async 修饰 setup 函数，使其执行异步任务
+              - 使当前组件成功一个异步组件
+          */
+          async setup() {
+              // 执行异步任务
+              const result = await axios.get('/data/address.json');
+              // 依然返回一个对象，该对象中的数据可以为对应的 promise 成功的值
+              return {
+                  msg: result.data
+              }
+          }
+      })
+  </script>
+  ```
+
+  注意看注释
+
+### 2) 其他新的 API
