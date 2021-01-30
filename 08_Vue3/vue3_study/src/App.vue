@@ -1,11 +1,10 @@
 <template>
-  <div>
-  <div>
+    <h2>shallowReactive 和 reactive</h2>
 </template>
 
 <script lang="ts">
-  import { defineComponent } from 'vue'
-  export default defineComponent({
-    name: 'App'
-  })
+    import { defineComponent, reactive } from 'vue'
+    export default defineComponent({
+        name: 'App'
+    })
 </script>

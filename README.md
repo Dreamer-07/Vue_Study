@@ -6095,7 +6095,7 @@ Child.vue
 - 代码
 
   ```vue
-  <template></template>
+  <template>
       <h2>shallowReactive & shallowRef 的使用</h2>
       <p>{{m1}}</p>
       <p>{{m2}}</p>
@@ -6181,7 +6181,657 @@ Child.vue
   </script>
   ```
 
+### 2) readonly 和 shallowReadonly 的基本使用
+
+- readonly()：获取对应的**深**只读代理对象
+
+  - 接收一个 普通对象/响应式对象/ref 数据，进行只读代理转换
+  - 只读代理是深层的，任意层的 prop 都仅仅是只读的
+
+- shallowReadonly：获取对应的**浅**只读代理对象
+
+  - 只有最外层进行只读代理，额外的 prop 可以进行修改(不执行嵌套数据的只读转换)
+
+- 注意：
+
+  1. 返回的对象是以传入对象为 target 的只读代理对象(可能会出现代理嵌套)
+  2. 如果传入一个原始对象/数据，那么(shallowReadonly)修改时不会更新视图
+
+- 应用场景：在某些特定情况下，不希望数据被修改，就可以生成对应的只读代理对象用来读取数据
+
+- 代码
+
+  ```vue
+  <template>
+      <h2>readonly和shallowReadonly的基本使用</h2>
+      <p>state: {{state}}</p>
+      <button @click="updater">更新数据</button>
+  </template>
   
+  <script lang="ts">
+      import { defineComponent, reactive, readonly, shallowReadonly } from 'vue'
+      export default defineComponent({
+          name: 'App',
+          setup() {
+              const obj = {
+                  name: '测试嘞',
+                  childObj: {
+                      name: '深度属性'
+                  }
+              };
+              /* 
+              使用 readonly() 函数获取对应的只读代理对象
+                  - 接收一个 普通对象/响应式对象/ref 数据
+                  - 只读代理是深层的，任意层的 prop 都仅仅是只读的
+              */
+              // const state = readonly(obj);
+  
+              /* 
+              使用 shallowReadonly() 函数获取对应的只读代理对象
+                  - 接收一个 普通对象/响应式对象/ref 数据
+                  - 只有最外层进行只读代理，额外的 prop 可以进行修改(不执行嵌套数据的只读转换)
+              */
+              const state = shallowReadonly(reactive(obj));
+  
+              function updater(){
+                  console.log(reactive(obj));
+                  console.log(state);
+  
+                  // 报错：Cannot assign to 'name' because it is a read-only property.
+                  // state.name += "====";
+                  // 报错：Cannot assign to 'name' because it is a read-only property
+                  // state.childObj.name += "====";
+  
+                  // 报错：Cannot assign to 'name' because it is a read-only property
+                  // state.name += "====";
+                  // 可以修改非最外层的数据
+                  state.childObj.name += "====";
+              }
+  
+              return{
+                  state,
+                  updater
+              }
+          }
+      })
+  </script>
+  ```
 
+### 3) toRaw 与 markRaw 的基本使用
 
+- toRaw
+
+  - 返回由 `reactive` / `readonly` 转换的代理对象的普通对象
+  - 可以用于 **临时读取**，访问不会被代理/跟踪，写入时也不会触发更新
+  - 得到的普通对象和转换前的是同一个对象
+
+- markRaw
+
+  - 标记一个对象，使其不会再被代理，返回对象本身
+  - 应用场景
+    1. 有些值不适合设置为响应式，例如第三方类实例或 Vue 组件对象
+    2. 当渲染具有不可变数据源的大列表时，通过代理转换可以提高性能(?)
+
+- 代码
+
+  ```vue
+  <template>
+      <h2>toRaw和markRaw的基本使用</h2>
+      <p>obj: {{obj}}</p>
+      <button @click="toRawUpdate">使用 toRaw 修改数据</button> <br />
+      <button @click="markRawUpdate">使用 markRaw 修改数据</button>
+  </template>
+  
+  <script lang="ts">
+      import { defineComponent, markRaw, reactive, toRaw } from 'vue'
+      interface UserInfo{
+          name: string;
+          age: number;
+          childObj?: {name: string};
+      }
+      export default defineComponent({
+          name: 'App',
+          setup() {
+              const eido = {
+                  name: 'toRaw和markRaw的基本使用',
+                  age: 17
+              };
+              const obj = reactive<UserInfo>(eido)
+              /* 
+              通过 toRaw() 返回响应式对象对应的普通的对象
+                  - 操作普通对象时，即使数据变化，界面也不会更新
+                  - 转换后的对象和转换前的对象是同一个
+              */
+              function toRawUpdate() {
+                  console.log('toRawUpdate()...');
+                  const testObj = toRaw(obj);
+                  // 操作普通对象时，即使数据变化，界面也不会更新
+                  testObj.name += "====";
+                  // 转换后的对象和转换前的对象是同一个
+                  console.log(eido == testObj,testObj); // true {...}
+              }
+              /* 
+              通过 markRaw() 可以标记一个原始对象，使其无法再成为响应式对象
+                  - 返回对象本身
+              */
+              function markRawUpdate() {
+                  console.log('markRawUpdate()...');
+                  const childObj = {
+                      name: '哔哩哔哩'
+                  };
+                  // 标记一个原始对象，使其无法成为响应式对象
+                  // childObj = markRaw(childObj)
+                  obj.childObj = childObj;
+                  setInterval(() => {
+                      if(obj.childObj){
+                          console.log("-----");
+                          obj.childObj.name += "====";
+                          console.log(obj,obj.childObj);
+                      }
+                  },1000)
+              }
+              return {
+                  obj,
+                  toRawUpdate,
+                  markRawUpdate
+              }
+          }
+      })
+  </script>
+  ```
+
+### 4) toRef 的基本使用
+
+- 可以为指定的响应式对象上的某个属性创建一个 ref 对象
+
+- 和 `ref` 的不同：二者内部操作的是同一份数据，更新时二者同步(ref 更新时互不影响)
+
+- 应用场景：当要将某个 prop 传递给 hook 函数时，可以使用 toRef 将其转换为(提高可用性吧算是)
+
+- 代码
+
+  App.vue
+
+  ```vue
+  <template>
+      <h2>toRef() 函数的使用</h2>
+      <p>obj: {{obj}}</p>
+      <p>name: {{name}}</p>
+      <p>age: {{age}}</p>
+      <button @click="updater">更新数据</button>
+      <hr />
+      <!-- 注意：组件间通信时使用 prop 的方式传递的是值而不是对象 -->
+      <Child :name="name" />
+  </template>
+  
+  <script lang="ts">
+      import { defineComponent, ref, toRef } from 'vue'
+      import Child from './components/Child.vue'
+      export default defineComponent({
+          name: 'App',
+          setup() {
+              const obj = {
+                  name: '巴御前',
+                  age: 16
+              };
+              /* 
+              通过 toRef() 可以为指定的响应式对象上的某个属性创建一个 ref 对象
+                  - 二者内部操作的是同一份数据，更新时二者同步
+              */
+              const name = toRef(obj,'name');
+              /* 
+              也可以使用 ref 为指定的响应式对象上的某个属性创建一个 ref 对象 
+                  - 但这样二者内部操作的就不是同一份数据，更新时相互不影响
+              */
+              const age = ref(obj.age);
+  
+              // 更新函数
+              const updater = () => {
+                  name.value += "!!!";
+                  age.value += 1;
+              }
+              return {
+                  obj,
+                  name,
+                  age,
+                  updater
+              }
+          },
+          components: {
+              Child
+          }
+      })
+  </script>
+  ```
+
+  Child.vue
+
+  ```vue
+  <template>
+      <h2>Child 子组件</h2>
+      <p>name: {{name}}</p>
+      <p>length: {{length}}</p>
+  </template>
+  
+  <script lang="ts">
+      import { defineComponent, toRef } from 'vue'
+      // 导入一个 hook 函数
+      import useRefValueLength from "../hooks/useRefValueLength"
+      export default defineComponent({
+          name: 'App',
+          props: {
+              name: {
+                  type: String,
+                  requried: true // 是否是必要的
+              }
+          },
+          setup(props) {
+              // 将 props 中的属性转换为 ref 类型后传递给 hook 函数得到需要的数据
+              const length = useRefValueLength(toRef(props,'name'))
+              return {
+                  length
+              }
+          }
+      })
+  </script>
+  ```
+
+  useRefValueLength.ts
+
+  ```typescript
+  import { computed, Ref } from 'vue'
+  // 得到一个 ref.value 的计算属性数据
+  export default function(ref: Ref){
+      return computed(() => {
+          return ref.value.toString().length;
+      })
+  }
+  ```
+
+### 5) customRef 的基本使用
+
+- 可以自定义一个 ref，并通过 `track` 和 `trigger()` 完成数据跟踪和视图更新
+
+- 代码
+
+  App.vue
+
+  ```vue
+  <template>
+      <h2>customRef</h2>
+      <input type="text" v-model="inputText">
+      <p>inputText: {{inputText}}</p>
+  </template>
+  
+  <script lang="ts">
+      import { defineComponent } from 'vue'
+      import useDebounceRef from "./hooks/useDebounceRef"
+      export default defineComponent({
+          name: 'App',
+          setup() {
+              const inputText = useDebounceRef<string>('',500);
+              return {
+                  inputText
+              }
+          }
+      })
+  </script>
+  ```
+
+  useDebounceRef.ts
+
+  ```typescript
+  import { customRef } from 'vue';
+  /**
+   * 返回一个防抖的 ref
+   * @param value 数据
+   * @param delay 防抖时间(毫秒),默认值 200
+   */
+  export default function<T>(value: T, delay = 200) {
+      /* 
+      使用 customRef() 自定义一个 ref
+          - 该函数接收两个参数 tarck & trigger    
+              track：用来跟踪收集依赖
+              trigger：用来触发响应(更新视图)
+      */
+      return customRef<T>((tarck,trigger) => {
+          let timeoutId: number    
+          return {
+              get(): T {
+                  // 通知 Vue 进行依赖跟踪
+                  tarck();
+                  return value;
+              },
+              set(newValue: T): void {
+                  // 先清除定时器
+                  clearTimeout(timeoutId);
+                  timeoutId = setTimeout(() => {
+                      value = newValue;
+                      // 通知 vue 更新视图
+                      trigger();
+                  },delay);    
+              }
+          }
+      });
+  }
+  ```
+
+#### 拓展：函数防抖和函数节流
+
+### 6) provide 和 inject
+
+- 提供跨多层级的组件间通信
+
+- 代码
+
+  App.vue
+
+  ```vue
+  <template>
+      <h2>provide和inject的基本使用</h2>
+      <p>当前颜色：{{color}}</p>
+      <button @click="color='red'">红色</button>
+      <button @click="color='blue'">蓝色</button>
+      <button @click="color='yellow'">黄色</button>
+      <hr>
+      <Son />
+  </template>
+  
+  <script lang="ts">
+      import { defineComponent, provide, ref } from 'vue'
+      import Son from './components/Son.vue'
+      export default defineComponent({
+          name: 'App',
+          setup() {
+              const color = ref('red');
+              /* 
+              通过 provide() 提供数据
+                  - 第一个参数为数据标识
+                  - 第二个参数为对应的数据
+              */
+              provide('color',color);
+              return {
+                  color
+              }
+          },
+          components: {
+              Son
+          }
+      })
+  </script>
+  ```
+
+  Son.vue
+
+  ```vue
+  <template>
+      <h2>Son 子级组件</h2>
+      <hr />
+      <GrandSon />
+  </template>
+  
+  <script lang="ts">
+      import { defineComponent } from 'vue'
+      import GrandSon from './GrandSon.vue'
+      export default defineComponent({
+          name: 'Son',
+          components: {
+              GrandSon
+          }
+      })
+  </script>
+  ```
+
+  GrandSon.vue
+
+  ```vue
+  <template>
+      <h2 :style="{color}">GrandSon 孙级组件</h2>
+  </template>
+  
+  <script lang="ts">
+      import { defineComponent, inject } from 'vue'
+      export default defineComponent({
+          name: 'GrandSon',
+          setup() {
+              // 通过 inject() 传入对应的数据标识即可得到对应的数据
+              const color = inject('color');
+              return {
+                  color
+              }
+          }
+      })
+  </script>
+  ```
+
+  PS: 传递的数据最好是响应式数据
+
+### 7) 响应式数据的判断
+
+1. `isRef` 判断一个值是否为 Ref 对象
+
+2. `isReactive` 判断一个值是否是由 reative() 创建的响应式代理对象
+
+3. `isReadonly` 判断一个值是否是由 readonly() 创建的只读代理对象
+
+4. `isProxy` 判断一个值是否是由 reactive() / readonly() 创建的 Proxy 对象
+
+5. 代码
+
+   ```vue
+   <template>
+       <h2>响应式数据的判断</h2>
+   </template>
+   
+   <script lang="ts">
+       import { defineComponent, isProxy, isReactive, isReadonly, isRef, reactive, readonly, ref, shallowReactive, shallowReadonly, shallowRef } from 'vue'
+       export default defineComponent({
+           name: 'App',
+           setup() {
+               // 1. `isRef` 判断一个值是否为 Ref 对象
+               console.log(isRef(ref({}))); // true
+               console.log(isRef(shallowRef({}))); // true
+   
+               // 2. `isReactive` 判断一个值是否是由 reative() 创建的响应式代理对象
+               console.log(isReactive(reactive({}))); // true
+               console.log(isReactive(shallowReactive({}))); // true
+   
+               // 3. `isReadonly` 判断一个值是否是由 readonly() 创建的只读代理对象
+               console.log(isReadonly(readonly({}))); // true
+               console.log(isReadonly(shallowReadonly({}))); // true
+   
+               // 4. `isProxy` 判断一个值是否是由 reactive() / readonly() 创建的 Proxy 对象
+               console.log(isProxy(reactive({}))); // true
+               console.log(isProxy(readonly({}))); // true
+               console.log(isProxy(shallowReadonly({}))); // true
+               return {
+                   
+               }
+           }
+       })
+   </script>
+   ```
+
+## 8.4 手写组合 API
+
+> 只实现数据劫持，不实现视图更新
+
+### 1) shallowReactive 和 reactive
+
+```javascript
+// shallowReactive & reactive
+// reactive 响应式代理对象的处理器对象
+const reactiveHandler = {
+    get(target, prop){
+        // 如果访问的属性时 _is_reactive 就返回 true
+        if(prop === '_is_reactive') return true;
+        console.log('get 进行读取数据劫持:' + prop);
+        return Reflect.get(target,prop);
+    },
+    set(target, prop, value){
+        console.log('set 进行修改/新增数据劫持:' + prop);
+        return Reflect.set(target,prop,value);
+    },
+    deletProperty(target, prop){
+        console.log('deleteProperty 进行删除数据劫持: ' + prop);
+        return Reflect.deleteProperty(target,prop)
+    }
+}
+
+// shallowReactive(浅数据劫持)
+function shallowReactive(target) {
+    // 1. 判断是否是对象
+    if(target && typeof target === 'object'){
+        // 2. 创建代理对象后返回
+        return new Proxy(target,reactiveHandler)
+    };
+    return target;
+}
+
+function reactive(target) {
+    // 1. 判断是否是对象
+    if(target && typeof target === 'object'){
+        // 2. 判断是否是数组
+        if(Array.isArray(target)){
+            // 2.1 如果是就遍历数组，进行深度监视
+            target.forEach((item,index) => {
+                target[index] = reactive(item); 
+            });
+        }else {
+            // 3. 判断是否是对象
+            // 3.1 如果是对象也要遍历，进行深度监视
+            Object.keys(target).forEach(key => {
+                target[key] = reactive(target[key]);
+            });
+        }
+        // 4. 创建代理对象后返回
+        return new Proxy(target,reactiveHandler)
+    };
+    return target;
+}
+```
+
+注意：这里有个弊端，就是深劫持(reactive)是直接修改源对象上的属性的，而不是修改对应的代理对象的属性
+
+但为了测试方便观察，就先这样写了
+
+### 2) shallowRef 和 ref
+
+```javascript
+// shallowRef - 浅数据劫持
+function shallowRef(target) {
+    // 返回对象
+    return {
+        // 使用一个属性保存 target
+        _value: target,
+        // 设置 set & get 方法，使外部通过 .value 属性访问 target
+        get value() {
+            console.log('get 进行读取数据时的劫持');
+            return this._value;
+        },
+        set value(value) {
+            console.log('set 进行修改数据时的劫持');
+            this._value = value;
+        }
+    }
+}
+
+// ref
+function ref(target) {
+    // 防止 target 中有嵌套对象，先将其进行 reactive 处理
+    proxyTarget = reactive(target);
+    return {
+        // 设置一个表示 ref 类型的属性
+        _is_ref: true,
+        // 使用一个属性保存 target
+        _value: proxyTarget,
+        // 设置 set & get 方法，使外部通过 .value 属性访问 target
+        get value() {
+            console.log('get 进行读取数据时的劫持');
+            return this._value;
+        },
+        set value(value) {
+            console.log('set 进行修改数据时的劫持');
+            this._value = value;
+        }
+    } 
+}
+```
+
+注意：对应 ref(深度劫持) 内部需要使用 reactive 进行转换
+
+### 3) shallowReadonly 和 readonly
+
+```javascript
+// readonly 只读代理对象的处理器对象
+const readonlyHandler = {
+    get(target, prop){
+        // 如果访问的属性名是 _is_readonly 就返回 true
+        if(prop === '_is_readonly') return true;
+        console.log('get 进行读取数据时的劫持：' + prop);
+        return Reflect.get(target,prop)
+    },
+    set(){
+        console.warn('set 不能对只读属性进行修改！！');
+        return false;
+    },
+    deleteProperty(){
+        console.warn('delete 不能对只读属性进行修改！！');
+        return false;
+    }
+}
+
+// shallowReadonly(浅数据劫持)
+function shallowReadonly(target) {
+    // 1. 判断是否是对象/数组
+    if (target && typeof target === 'target') {
+        // 2. 进行只读代理
+        return new Proxy(target,readonlyHandler)
+    };
+    // 不是直接返回
+    return target;
+}
+
+// readonly
+function readonly(target) {
+    // 1. 判断是否是对象/数组
+    if (target && typeof target === 'object') {
+        // 2. 判断是否是数组
+        if(Array.isArray(target)){
+            // 2.1 如果是就遍历数组，进行深度监视
+            target.forEach((item,index) => {
+                target[index] = readonly(item); 
+            });
+        }else {
+            // 3. 判断是否是对象
+            // 3.1 如果是对象也要遍历，进行深度监视
+            Object.keys(target).forEach(key => {
+                target[key] = readonly(target[key])
+            });
+        }
+        // 4. 进行只读代理
+        return new Proxy(target,readonlyHandler)
+    };
+    // 不是则直接返回
+    return target;
+}
+```
+
+### 4) isRef、isReactive、isReadonly
+
+```javascript
+// 判断响应式数据
+function isRef (obj) {
+    return obj && obj._is_ref
+};
+function isReactive (obj) {
+    return obj && obj._is_reactive
+};
+function isReadonly (obj) {
+    return obj && obj._is_readonly
+};
+function isProxy (obj) {
+    return isReactive(obj) || isReadonly(obj)
+};
+```
 

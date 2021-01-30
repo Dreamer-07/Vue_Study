@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手写组合式 API</title>
+</head>
+<body>
+    <script src="./index.js"></script>
+    <script>
+        const user = new Object({
+            name: '名前は何',
+            info: {
+                age: 'おいくつですか',
+                price: '月給はいくらですか'
+            }
+        });
+
+        // 使用 shallowReactive
+        // const proxy1 = shallowReactive(user);
+        // 最外层读取
+        // console.log(proxy1.name);
+        // 最外层修改
+        // proxy1.name += "====";
+        // 深度修改 - 只进行了对 info 属性读取时的劫持
+        // proxy1.info.price += "===="
+        // 深度删除 - 和上同理
+        // delete proxy1.info.age
+
+        // 使用 reactive
+        const proxy2 = reactive(user);
+        // 最外层读取
+        // console.log(proxy2.name);
+        // 最外层修改
+        // proxy2.name += "====";
+        // 深度修改 - 进行了 info 属性的劫持，对其属性 price 也进行了劫持
+        // proxy2.info.price += "===="
+        // 深度删除 - 合上同理
+        // delete proxy2.info.age
+
+        // 使用 shallowReadonly
+        // const proxy3 = shallowReadonly(user);
+        // 最外层读取
+        // console.log(proxy3.name);
+        // 最外层修改 - 修改失败，不允许修改
+        // proxy3.name += "====";
+        // 深度修改 - 修改成功，允许对除了最外层的数据进行操作
+        // proxy3.info.price += "===="
+        // 深度删除 - 删除成功，允许对除了最外层的数据进行操作
+        // delete proxy3.info.age
+        // console.log(proxy3);
+
+        // 使用 readonly
+        // const proxy4 = readonly(user);
+        // 最外层读取
+        // console.log(proxy4.name);
+        // 最外层修改 - 修改失败，不允许修改
+        // proxy4.name += "====";
+        // 深度修改 - 修改失败，不允许对任意数据进行操作
+        // proxy4.info.price += "===="
+        // 深度删除 - 删除失败，不允许对任意数据进行操作
+        // delete proxy4.info.age
+
+        // 使用 shallowRef 
+        // const proxy5 = shallowRef(user);
+        // 可以劫持到的修改
+        // proxy5.value = {
+        //     name: '巴御前天下第一！！'
+        // };
+        // 无法劫持到的修改，只能劫持到对应的 value 属性的 get(获取)
+        // proxy5.value.info.name = {
+        //     name: 'ともえちゃん可愛いでしょう'
+        // };
+
+        // const proxy6 = ref(user);
+        // 可以劫持到的修改
+        // proxy6.value = {
+        //     name: '巴御前天下第一！！'
+        // };
+        // 可以劫持到的修改
+        // proxy6.value.info.name = "巴御前天下第一";
+
+        // 响应式数据的判断
+        console.log(isRef(ref({}))); // true
+        console.log(isReactive(reactive({}))); // true
+        console.log(isReadonly(readonly({}))); // true
+        console.log(isProxy(reactive({}))); // true
+        console.log(isProxy(readonly({}))); // true
+    </script>
+</body>
+</html>
