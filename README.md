@@ -1,4 +1,4 @@
-# Vue 全家桶
+#  TeloportVue 全家桶
 
 # 第一章 Vue 核心
 
@@ -136,6 +136,7 @@
 ## 1.3  模板语法
 
 - 模板的理解
+
   - 动态的 Html 页面
   - 包含了一些 JS 语法代码
     - 双大括号表达式(JS 表达式，可以写 JS 语法)
@@ -307,7 +308,7 @@
 
 > **回顾：**回调函数：1. 自定义的；2. 没有调用；3. 执行了
 
--  通过 getter/setter 实现对计算属性数据的显示和监视
+- 通过 getter/setter 实现对计算属性数据的显示和监视
 
   - 定义 get(获取) 回调函数，需要读取当前计算属性的值时，根据相关的数据(data)**计算并返回**当前属性数据的值
 
@@ -889,17 +890,17 @@
 
 3. 如果传入一个参数,那么就不会传入默认的 event 对象
 
-    <img src="README.assets/image-20201226170030579.png" alt="image-20201226170030579" style="zoom:50%;" />
+   <img src="README.assets/image-20201226170030579.png" alt="image-20201226170030579" style="zoom:50%;" />
 
 4. 如果需要传入参数，又需要操作当前的 DOM 元素，可以显式的传入一个参数 $event,该参数就是 event
 
-    <img src="README.assets/image-20201226170043395.png" alt="image-20201226170043395" style="zoom:50%;" />
+   <img src="README.assets/image-20201226170043395.png" alt="image-20201226170043395" style="zoom:50%;" />
 
 ### 事件修饰符
 
 1. 阻止事件的冒泡 - 在绑定数据监听的后面加上 `.stop`  即可
 
-2.  阻止事件的默认行为 - 在绑定数据监听的后面加上 `.prevent` 即可
+2. 阻止事件的默认行为 - 在绑定数据监听的后面加上 `.prevent` 即可
 
 3. 实例
 
@@ -1724,7 +1725,7 @@
       }
   </style>
   ```
-  
+
 - package.json
 
   ```json
@@ -2048,7 +2049,7 @@
 2. 父组件中传入对应的标签数据 
 
    ```html
-<vue-child>
+   <vue-child>
        <!-- 使用 v-slot 指令(好像会因为 eslint 报错) -->
        <template v-slot:info>
            <span>已完成{{completed}}</span> / 全部{{this.todos.length}}
@@ -2265,18 +2266,17 @@
       </script>
       ...
       ```
-      
+
    4. 在 List.vue 子级组件中接收父级组件传递的数据
-   
+
       这里使用在暴露默认接口时，使用 `props` 属性接收数据，该数据成为**组件对象**的属性
-   
+
    > 简略写法: props: ['父组件标签属性名']
-   
-      >
+
       >组件对象: 也就是 this，虽然不是 vm，但和 vm 实例对象的使用方法一致
 
          同时还需要将数据传递给 `Item` 组件
-   
+
       ```vue
       <template>
       	<div class="col-md-8">
@@ -2307,12 +2307,12 @@
           }
       </style>
       ```
-   
-   
+
+
    5. 在 item 组件中接收数据并展示
-   
+
    > 复杂写法 - props: {属性名: 属性值类型}
-   
+
       ```vue
       <template>
       	<li class="list-group-item">
@@ -2359,7 +2359,7 @@
           }
       </style>
       ```
-   
+
 4. 交互添加
 
    1. 在 Add.vue 中定义 DOM 回调函数 `add()`，在内部定义具体的业务逻辑
@@ -2448,11 +2448,11 @@
 2. axios
 
    通用的 ajax 请求库，官方推荐
-   
+
    axios 是一个基于 **Promise** 用于浏览器和 nodejs 的 HTTP 客户端。简单的理解就是ajax的封装
-   
+
    本身具有的特征
-   
+
    1. 从浏览器中创建 XMLHttpRequest
    2. 从 node.js 发出 http 请求
    3. 支持 Promise API
@@ -2704,7 +2704,7 @@
 
 > 可以使用 vue2.x 的版本，目前许多 UI 库还不能兼容 vue3.x
 
-1.  `npm i mint-ui -S` 安装 mint-ui
+1. `npm i mint-ui -S` 安装 mint-ui
 
 2. `npm i -D babel-plugin-component`  安装这个插件完成 **按需加载**
 
@@ -2746,59 +2746,59 @@
    </script>
    ```
 
-5.  在 **mian.ts** 中引入 mint-ui 組件
+5. 在 **mian.ts** 中引入 mint-ui 組件
 
-    ```typescript
-    // 引入 UI 组件
-    import { Button } from 'mint-ui'
-    // 注册成全局标签，第一个参数为标签名，建议使用自带的 组件.name; 第二个参数为对应的组件
-    Vue.component(Button.name,Button)
-    ```
+   ```typescript
+   // 引入 UI 组件
+   import { Button } from 'mint-ui'
+   // 注册成全局标签，第一个参数为标签名，建议使用自带的 组件.name; 第二个参数为对应的组件
+   Vue.component(Button.name,Button)
+   ```
 
-6.  在 **App.vue** 中使用对应的 UI 组件
+6. 在 **App.vue** 中使用对应的 UI 组件
 
-    ```vue
-    <template>
-      <div id="app">
-        <mt-button type="default">default</mt-button>
-      </div>
-    </template>
-    ```
+   ```vue
+   <template>
+     <div id="app">
+       <mt-button type="default">default</mt-button>
+     </div>
+   </template>
+   ```
 
-7.  运行项目，查看效果
+7. 运行项目，查看效果
 
-    ![image-20210105105322862](README.assets/image-20210105105322862.png)
+   ![image-20210105105322862](README.assets/image-20210105105322862.png)
 
-8.  添加对应的事件监听
+8. 添加对应的事件监听
 
-    建议加上 `.native` 修饰符，代表使用 **原生的 JS 事件**，而不是 vue 包装的
+   建议加上 `.native` 修饰符，代表使用 **原生的 JS 事件**，而不是 vue 包装的
 
-    对于**非标签组件**，建议在组件中局部注册
+   对于**非标签组件**，建议在组件中局部注册
 
-    ```vue
-    <template>
-    	<div id="app">
-        	<mt-button type="default" @click.native="testToast">default</mt-button>
-        </div>
-    </template>
-    
-    <script lang="ts">
-        import { Component, Vue } from 'vue-property-decorator';
-        // 导入使用的 非标签组件
-        import { Toast } from 'mint-ui'
-        export default {
-            methods: {
-                testToast() {
-                    Toast('巴御前天下第一!!');
-                }
-            }
-        }
-    </script>
-    ```
+   ```vue
+   <template>
+   	<div id="app">
+       	<mt-button type="default" @click.native="testToast">default</mt-button>
+       </div>
+   </template>
+   
+   <script lang="ts">
+       import { Component, Vue } from 'vue-property-decorator';
+       // 导入使用的 非标签组件
+       import { Toast } from 'mint-ui'
+       export default {
+           methods: {
+               testToast() {
+                   Toast('巴御前天下第一!!');
+               }
+           }
+       }
+   </script>
+   ```
 
-9.  测试
+9. 测试
 
-    ![image-20210105110003269](README.assets/image-20210105110003269.png)
+   ![image-20210105110003269](README.assets/image-20210105110003269.png)
 
 ## 4.3 Element UI
 
@@ -2852,11 +2852,11 @@
 
    浏览器一开始会加载必需的HTML、CSS和JavaScript，之后所有的操作都在这张页面上完成，这一切都由JavaScript来控制。
 
-3. 路由链接：点击时不会向后台发起请求，而是加载对应的 **路由组件**，由对应的组件完成各自的请求
+2. 路由链接：点击时不会向后台发起请求，而是加载对应的 **路由组件**，由对应的组件完成各自的请求
 
-4. 路由器：管理路由
+3. 路由器：管理路由
 
-5. 路由：一对 key 和 value
+4. 路由：一对 key 和 value
 
    - key 为对应的 path(路径) 
 
@@ -2864,9 +2864,9 @@
 
      ​			   后台中为 **处理请求的回调函数**
 
-6. vue - router 文档：https://router.vuejs.org/zh/installation.html
+5. vue - router 文档：https://router.vuejs.org/zh/installation.html
 
-7. **注意：** 如果使用的是 vue3.x ，需要使用 vue-router / vuex 时需要安装相应的 `alpha` 版本
+6. **注意：** 如果使用的是 vue3.x ，需要使用 vue-router / vuex 时需要安装相应的 `alpha` 版本
 
    参考博客：https://zhuanlan.zhihu.com/p/138444490
 
@@ -3116,13 +3116,13 @@
 3. 可以通过在 `devtools` 中查看路由组件 `$route` 数据属性，该属性代表当前路由
 
    (通过控制台也可以查看基本信息)
-   
+
    ![image-20210115143730604](README.assets/image-20210115143730604.png)
-   
+
 4. 在路由组件中通过 `$route.(params / query).key` 访问数据
 
    key 为指定的 路径占位符/参数名；获取的 value 是 `string` 类型的
-   
+
 5. 注意
 
    - 路由组件中可以通过监听 `$route` 属性，及时更新数据
@@ -3682,7 +3682,9 @@ export default {
    - 说明
 
      1. 最大的 node 节点类型：`document(HTML 文档对象)`
+
      2. 常见的节点类型：`Element(元素)、Attr(属性)、Text(文本)`
+
      3. 该属性得到的对应的节点类型的 **数字**
 
         PS：在自己写代码的时候很少用上，写库的时候就要视情况使用
@@ -4625,7 +4627,6 @@ var updater = {
       return new Observer(value);
   };
   ```
-  
 
 PS：这里的 Dep 下面会说，这里只要知道 **在创建 MVVM 对象时就会实施数据劫持**
 
@@ -5180,10 +5181,11 @@ PS：这里的 Dep 下面会说，这里只要知道 **在创建 MVVM 对象时�
 - 简述
 
   - Proxy 用于创建一个对象(target)的代理对象,同时定义对应的处理器对象(handler)用来监视数据和其相关操作
+
 - 处理器对象中包含指定的函数用来处理代理对象的操作(增删改查等)
-  
+
   - 函数体中通过 `Reflect` 的静态方法访问/操作源对象中的属性
-  
+
 - 代码
 
   ```javascript
@@ -5399,7 +5401,7 @@ PS：这里的 Dep 下面会说，这里只要知道 **在创建 MVVM 对象时�
 - 代码
 
   ```vue
-//---------- 父组件
+  //---------- 父组件
   <template>
     ...
   
@@ -6835,9 +6837,9 @@ function isProxy (obj) {
 };
 ```
 
-## 8.5 其他新组合和 API
+## 8.5 其他新组件和 API
 
-### 1) 新组合
+### 1) 新组件
 
 #### Fragment(片段)
 
@@ -6879,7 +6881,7 @@ function isProxy (obj) {
       <h2>Child 子级组件</h2>
       <button @click="isShow=true">显示对话框</button>
       <hr />
-      <!-- 使用 Teleport 标签: to 属性指定要插入的指定标签 -->
+      <!-- 使用 Teleport 组件: to 属性指定要插入的指定标签 -->
       <Teleport to='body' >
           <div v-if="isShow" class="model">
               <h4>This is 会话框 です</h4>
@@ -6924,7 +6926,7 @@ function isProxy (obj) {
   <template>
       <h2>Suspense 标签的使用</h2>
       <hr />
-      <!-- 对于异步组件，可以使用 Suspense 标签使其在加载的过程中显的更加平滑 -->
+      <!-- 对于异步组件，可以使用 Suspense 组件使其在加载的过程中显的更加平滑 -->
       <Suspense>
           <!-- 指定异步组件的插槽为 default -->
           <template #default>
@@ -6980,4 +6982,694 @@ function isProxy (obj) {
 
   注意看注释
 
-### 2) 其他新的 API
+## 8.5 todoList 案例
+
+### 1) 组件拆分
+
+1. 设计图
+
+   ![image-20210131085941526](README.assets/image-20210131085941526.png)
+
+2. 源代码(html + css)
+
+   - index.html
+
+     ```html
+     <!doctype html>
+     <html lang="en">
+         <head>
+             <meta charset="utf-8">
+             <title>React App</title>
+     
+             <link rel="stylesheet" href="index.css">
+         </head>
+         <body>
+             <div id="root">
+                 <div class="todo-container">
+                     <div class="todo-wrap">
+                         <div class="todo-header">
+                             <input type="text" placeholder="请输入你的任务名称，按回车键确认"/>
+                         </div>
+                         <ul class="todo-main">
+                             <li>
+                                 <label>
+                                     <input type="checkbox"/>
+                                     <span>xxxxx</span>
+                                 </label>
+                                 <button class="btn btn-danger" style="display:none">删除</button>
+                             </li>
+                             <li>
+                                 <label>
+                                     <input type="checkbox"/>
+                                     <span>yyyy</span>
+                                 </label>
+                                 <button class="btn btn-danger" style="display:none">删除</button>
+                             </li>
+                         </ul>
+                         <div class="todo-footer">
+                             <label>
+                                 <input type="checkbox"/>
+                             </label>
+                             <span>
+                                 <span>已完成0</span> / 全部2
+                             </span>
+                             <button class="btn btn-danger">清除已完成任务</button>
+                         </div>
+                     </div>
+                 </div>
+             </div>
+     
+         </body>
+     </html>
+     ```
+
+   - index.css
+
+     ```css
+     /*base*/
+     body {
+         background: #fff;
+     }
+     
+     .btn {
+         display: inline-block;
+         padding: 4px 12px;
+         margin-bottom: 0;
+         font-size: 14px;
+         line-height: 20px;
+         text-align: center;
+         vertical-align: middle;
+         cursor: pointer;
+         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05);
+         border-radius: 4px;
+     }
+     
+     .btn-danger {
+         color: #fff;
+         background-color: #da4f49;
+         border: 1px solid #bd362f;
+     }
+     
+     .btn-danger:hover {
+         color: #fff;
+         background-color: #bd362f;
+     }
+     
+     .btn:focus {
+         outline: none;
+     }
+     
+     
+     /*app*/
+     .todo-container {
+         width: 600px;
+         margin: 0 auto;
+     }
+     .todo-container .todo-wrap {
+         padding: 10px;
+         border: 1px solid #ddd;
+         border-radius: 5px;
+     }
+     
+     /*header*/
+     .todo-header input {
+         width: 560px;
+         height: 28px;
+         font-size: 14px;
+         border: 1px solid #ccc;
+         border-radius: 4px;
+         padding: 4px 7px;
+     }
+     
+     .todo-header input:focus {
+         outline: none;
+         border-color: rgba(82, 168, 236, 0.8);
+         box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(82, 168, 236, 0.6);
+     }
+     
+     /*main*/
+     .todo-main {
+         margin-left: 0px;
+         border: 1px solid #ddd;
+         border-radius: 2px;
+         padding: 0px;
+     }
+     
+     .todo-empty {
+         height: 40px;
+         line-height: 40px;
+         border: 1px solid #ddd;
+         border-radius: 2px;
+         padding-left: 5px;
+         margin-top: 10px;
+     }
+     /*item*/
+     li {
+         list-style: none;
+         height: 36px;
+         line-height: 36px;
+         padding: 0 5px;
+         border-bottom: 1px solid #ddd;
+     }
+     
+     li label {
+         float: left;
+         cursor: pointer;
+     }
+     
+     li label li input {
+         vertical-align: middle;
+         margin-right: 6px;
+         position: relative;
+         top: -1px;
+     }
+     
+     li button {
+         float: right;
+         margin-top: 3px;
+     }
+     
+     li:before {
+         content: initial;
+     }
+     
+     li:last-child {
+         border-bottom: none;
+     }
+     
+     /*footer*/
+     .todo-footer {
+         height: 40px;
+         line-height: 40px;
+         padding-left: 6px;
+         margin-top: 5px;
+     }
+     
+     .todo-footer label {
+         display: inline-block;
+         margin-right: 20px;
+         cursor: pointer;
+     }
+     
+     .todo-footer label input {
+         position: relative;
+         top: -1px;
+         vertical-align: middle;
+         margin-right: 5px;
+     }
+     
+     .todo-footer button {
+         float: right;
+         margin-top: 5px;
+     }
+     ```
+
+3. 在 public/ 下创建 css 文件夹，创建一个基础的 css 文件，在 index.html 中引入
+
+4. 在 src/ 下创建 components 文件夹，创建对应的组件
+
+5. 引入对应的 html 模板和 css 代码
+
+6. 在 App 组件中引入所有子级组件
+
+### 2) List 展示数据
+
+1. 定义展示数据的 `type` 用于进行类型约束
+
+   ```typescript
+   // 定义展示数据的类型
+   export interface Todo {
+       id: number, // 唯一标识
+       name: string, // 名称
+       isCompleted: boolean // 是否完成
+   }
+   ```
+
+2. 确实要使用的容器：将多个 Item 用数组存储，单个 Item 的类型应该是 Todo 类型的对象
+
+3. 确实数据应该放在哪：由于多个子级组件都要使用(Header、List等)，所以建议放在 App.vue 中
+
+   ```vue
+   <template>
+     <div class="todo-container">
+       <div class="todo-wrap">
+         <Header />
+         <List :todos="todos" />
+         <Footer />
+       </div>
+     </div>
+   </template>
+   
+   <script lang="ts">
+   import { defineComponent, reactive, toRefs } from "vue";
+   // 导入组件
+   import Header from "./components/Header.vue";
+   import List from "./components/List.vue";
+   import Footer from "./components/Footer.vue";
+   // 导入类型约束
+   import { Todo } from "./types/Todo";
+   export default defineComponent({
+     name: "App",
+     components: {
+       Header,
+       List,
+       Footer,
+     },
+     setup() {
+       /* 
+       - 使用数组存储多个 Item，用对象存储单个 Item - 定义响应式的展示数据
+       - 定义 Todo 类型约束，防止数据被破坏
+       */
+       const state = reactive<{todos: Todo[]}>({
+         todos: [
+           { id: 1, name: "巴御前", isCompleted: true },
+           { id: 2, name: "诶嘿嘿", isCompleted: false },
+           { id: 3, name: "阿巴阿巴", isCompleted: false },
+         ],
+       });
+   
+       return {
+         // 使用 toRefs 将内部的数据全部转换成 ref 后，使用 ...暴露出去
+         ...toRefs(state),
+       };
+     },
+   });
+   </script>
+   ...
+   ```
+
+4. 在 List 组件中接收数据后，遍历并传递给 Item 组件
+
+   ```vue
+   <template>
+   	<ul class="todo-main">
+       	<Item v-for="todo in todos" :key="todo.id" :todo="todo" />
+       </ul>
+   </template>
+   
+   <script lang="ts">
+       import { defineComponent } from "vue";
+       import Item from './Item.vue'
+       export default defineComponent({
+           name: "List",
+           components: {
+               Item
+           },
+           props: ['todos']
+       });
+   </script>
+   ```
+
+5. 在 Item 中接收并展示数据
+
+   ```vue
+   <template>
+   	<li>
+           <label>
+               <input type="checkbox" v-model="todo.isCompleted"/>
+               <span>{{ todo.name }}</span>
+           </label>
+           <button class="btn btn-danger" style="display: none">删除</button>
+       </li>
+   </template>
+   
+   <script lang="ts">
+       import { defineComponent } from "vue";
+       // 引入类型
+       import { Todo } from '../types/Todo'
+       export default defineComponent({
+           name: "Item",
+           props: {
+               todo: Object as () => Todo // 使用回调函数确定类型
+       	}
+       });
+   </script>
+   ```
+
+   知识点：在定义数据类型时，可以使用 as 和 箭头函数 确定数据类型
+
+6. 如果此时执行项目报了一个错误：`nexpected mutation of "xxx" prop  vue/no-mutating-props`，就去 Eslint 配置文件的 rules 项，添加以下代码
+
+   ```js
+   rules: {
+       ....
+       'vue/no-mutating-props': 0, // 关闭该错误
+   }
+   ```
+
+   [Vue的Eslint配置](https://my.oschina.net/u/3939561/blog/4679874)
+
+### 3) Header 添加数据
+
+1. 由 App 组件分发事件给 Header 组件
+
+   ```vue
+   <template>
+   	<div class="todo-container">
+       	<div class="todo-wrap">
+           	<Header :addTodo="addTodo" />
+               ...
+       	</div>
+       </div>
+   </template>
+   
+   <script lang="ts">
+       ...
+       // 导入类型约束
+       import { Todo } from "./types/Todo";
+       export default defineComponent({
+           ...
+           setup() {
+               ...
+   
+               // 定义添加数据的方法
+               const addTodo = (todo: Todo) => {
+                   state.todos.push(todo)
+               }
+               return {
+                   ...
+                   addTodo
+               };
+           },
+       });
+   </script>
+   
+   ...
+   ```
+
+2. 在 Header 组件中接收，并定义相关的回调函数
+
+   ```vue
+   <template>
+   	<div class="todo-header">
+       	<input type="text" placeholder="请输入你的任务名称，按回车键确认" v-model="name" @keyup.enter="add"/>
+       </div>
+   </template>
+   
+   <script lang="ts">
+       import { defineComponent, ref } from "vue";
+       import { Todo } from '../types/Todo'
+       export default defineComponent({
+           name: "Header",
+           props: {
+               addTodo: {
+                   type: Function,
+                   require: true, //必须的
+               },
+           },
+           setup(props) {
+               const name = ref('')
+               const add = () => {
+                   // 1. 获取文本框数据
+                   const newName = name.value;
+                   // 2. 判断数据
+                   if(!newName.trim()) return;
+                   // 3. 初始化数据
+                   const todo: Todo = {
+                       id: Date.now(),
+                       name: newName,
+                       isCompleted: false
+                   };
+                   // 4. 调用方法
+                   props.addTodo && props.addTodo(todo)
+                   // 5. 恢复默认数据
+                   name.value = '';
+               }
+               return {
+                   name,
+                   add
+               };
+           },
+       });
+   </script>
+   ```
+
+### 4) Item 高亮显示
+
+1. 定义对应的样式和回调函数即可
+
+   ```vue
+   <template>
+       <li @mouseenter="mouseHandler(true)" @mouseleave="mouseHandler(false)"
+           :style="{backgroundColor: bgColor, color: myColor}">
+         	<label>
+               <input type="checkbox" v-model="todo.isCompleted"/>
+               <span>{{ todo.name }}</span>
+           </label>
+           <button class="btn btn-danger" v-if="isShow">删除</button>
+       </li>
+   </template>
+   
+   <script lang="ts">
+       import { defineComponent, ref } from "vue";
+       // 引入类型
+       import { Todo } from '../types/Todo'
+       export default defineComponent({
+           name: "Item",
+           props: {
+               todo: Object as () => Todo // 使用回调函数确定类型
+       	},
+        	setup() {
+           	// 背景色
+               const bgColor = ref('white');
+               // 前景色
+               const myColor = ref('black');
+               // 按钮显示
+               const isShow = ref(false);
+               // DOM 回调函数
+               const mouseHandler = (flag: boolean) => {
+                   if(flag){
+                       bgColor.value = 'pink';
+                       myColor.value = 'green';
+                       isShow.value = true;
+                   }else{
+                       bgColor.value = 'white';
+                       myColor.value = 'black';
+                       isShow.value = false;
+                   }
+               }
+               return {
+                   mouseHandler,
+                   bgColor,
+                   myColor,
+                   isShow
+               }
+       	}
+       });
+   </script>
+   ```
+
+### 5) Item 删除数据
+
+> 这里用了 project 和 inject，也可以用原来的 props
+
+1. App.vue
+
+   ```typescript
+   const delTodo = (index: number) => {
+       state.todos.splice(index, 1)
+   };
+   // 注册函数
+   provide('delTodo',delTodo);
+   ```
+
+2. Item.vue
+
+   ```typescript
+   // 通过 inject 获取 App 组件中的删除函数
+   const delTodo = inject('delTodo') as Function;
+   // 删除函数
+   const removeTodo = () => {
+       if(confirm(`你确定删除${props.todo.name}吗`)){
+           delTodo(props.index);
+       }
+   }
+   ```
+
+### 6) Item 选择已完成的
+
+> 由父组件提供的数据，不建议在子组件中使用 v-model 绑定修改，不只是 v-model，父组件的数据都不要在子组件直接修改
+>
+> 而是通过调用父组件提供的方法
+
+1. App.vue
+
+   ```typescript
+   // 定义修改 todo.isCompleted 状态的方法
+   const updateTodo = (todo: Todo, isCompleted: boolean) => {
+       todo.isCompleted = isCompleted;
+   }
+   // 注册函数
+   provide('updateTodo',updateTodo);
+   ```
+
+2. Item.vue
+
+   ```vue
+   <template>
+   <label>
+       <input type="checkbox" v-model="isCompleted"/>
+       <span>{{ todo.name }}</span>
+   </label>
+   </template>
+   
+   <script lang="ts">
+       ...
+       // 通过 inject 获取 App 组件中的函数
+       const updateTodo = inject('updateTodo') as Function;
+       // 定义单选框(是否完成)计算属性
+       const isCompleted = computed({
+           get(){
+               return props.todo.isCompleted;
+           },
+           set(val){
+               updateTodo(props.todo,val);
+           }
+       })
+       setup(){
+           ...
+           return {
+               ...
+               isCompleted
+           }
+       }
+   </script>
+   ...
+   ```
+
+### 7) Footer 全选/全不选
+
+1. 在 App.vue 定义对应的方法
+
+   ```typescript
+   // 定义修改所有 todo.isComplted 状态的方法
+   const updateTodos = (check: boolean) => {
+       state.todos.forEach(todo => todo.isCompleted = check)
+   }
+   ```
+
+2. 传入给 Footer 子组件，Footer 组件中需要定义对应的计算属性
+
+   ```vue
+   <template>
+   	<div class="todo-footer">
+           <label>
+               <input type="checkbox" v-model="isCheckAll"/>
+           </label>
+           <span> 
+               <span>已完成{{count}}</span> / 全部 {{todos.length}}
+           </span>
+           <button class="btn btn-danger">清除已完成任务</button>
+       </div>
+   </template>
+   
+   <script lang="ts">
+       import { computed, defineComponent } from "vue";
+       import { Todo } from '../types/Todo'
+       export default defineComponent({
+           name: "Footer",
+           props: {
+               todos: {
+                   type: Array as () => Todo[],
+           		required: true
+       		},
+               updateTodos: {
+               	type: Function,
+                   required: true
+               }
+       	},
+           setup(props) {
+               const count = computed(() => {
+                   return props.todos.reduce((currentValue,todo) => {
+                       return currentValue + (todo.isCompleted ? 1 : 0)
+                   },0)
+               });
+               const isCheckAll = computed<boolean>({
+                   get(){
+                       return count.value > 0 && props.todos.length === count.value
+                   },
+                   set(val: boolean){
+                       props.updateTodos(val)
+                   }
+               })
+               return {
+                   count,
+                   isCheckAll
+               }
+           }
+       });
+   </script>
+   ...
+   ```
+
+### 8) Footer 清除已选的任务
+
+1. 在 App 中定义相关的方法
+
+   ```typescript
+   // 定义删除所有已完成的任务的 todo
+   const delAllCompletedTodos = () => {
+       state.todos = state.todos.filter(todo => !todo.isCompleted);
+   };
+   ```
+
+2. 子组件 Footer 接收后调用即可
+
+### 9) 缓存数据
+
+1. 新建 utils 文件夹，创建一个 TS 文件编写对应的工具方法
+
+   useLocalStorageUtil.ts
+
+   ```typescript
+   import { Todo } from '../types/Todo'
+   export function saveTodos(todos: Todo[]) {
+       todos && localStorage.setItem('todos_key',JSON.stringify(todos));
+   }
+   export function readTodos(): Todo[] {
+       return JSON.parse(localStorage.getItem('todos_key') || '[]');
+   }
+   ```
+
+2. 在 App.vue 中引入并使用；
+
+   在页面挂载结束之后使用 `readTodos` 读取缓存数据，
+
+   使用 watch 深度监视 **state.todos** 如果数据发生修改就调用 `saveTodos` 缓存数据
+
+   ```typescript
+   const state = reactive<{todos: Todo[]}>({
+       // 初始化定义数组为空
+       todos: [],
+   });
+   
+   // 在页面挂载结束之后
+   onMounted(() => {
+       setTimeout(()=>{
+           state.todos = readTodos();
+       },1000);
+   });
+   // 深度监听 state.todos 数组，如果发生数据变化，就调用方法保存到游览器缓存
+   watch(() => state.todos, saveTodos, {deep: true});
+   ```
+
+### 10) 拓展：Vue2 和 Vue3 的区别
+
+1. 支持大多数 Vue2 的特性
+
+2. Vue3 中设计了一套组合式 API 代替了 Vue2 中的 Option API，复用性更强了
+
+3. 更好的支持 **TS**
+
+4. **Vue3 中使用 Proxy+Refelct 代替了 Vue2 中的 Object.defineProperty() 方法来实现数据劫持**
+
+5. 重写了虚拟 DOM，速度变快了
+
+6. 新的组件：`Fragment` 、`Teleport `、`Suspense`
+
+7. 设计了一个新的脚手架工具：`vite`
+
+8. 由 Vue2 的面向对象编程转换为了 Vue3 中的函数式编程(option api => composition api)
+
+   ![image-20210131182526763](README.assets/image-20210131182526763.png)
+
